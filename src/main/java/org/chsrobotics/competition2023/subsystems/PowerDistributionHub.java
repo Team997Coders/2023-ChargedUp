@@ -77,8 +77,10 @@ public class PowerDistributionHub implements Subsystem {
         if (!Robot.isReal()) {
             simTotalCurrent = totalCurrentDraw;
         } else {
-            HighLevelLogger.logWarning("Sim state should not be set on a real robot!");
-            HighLevelLogger.logWarning("There might be sim code still running somewhere!");
+            HighLevelLogger.getInstance()
+                    .logWarning("Sim state should not be set on a real robot!");
+            HighLevelLogger.getInstance()
+                    .logWarning("There might be sim code still running somewhere!");
         }
     }
 

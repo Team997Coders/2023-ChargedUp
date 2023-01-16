@@ -47,11 +47,13 @@ public class Robot extends SRobot {
         if (from == RobotState.NONE && to == RobotState.DISABLED) {
             // robot initialization
 
-            HighLevelLogger.startLogging();
-            HighLevelLogger.logMessage("*******ROBOT STARTUP*******");
-            HighLevelLogger.logMessage("997 Competition Robot 2023");
+            HighLevelLogger.getInstance().startLogging();
+            HighLevelLogger.getInstance().logMessage("*******ROBOT STARTUP*******");
+            HighLevelLogger.getInstance().logMessage("997 Competition Robot 2023");
 
-            DriverStation.startDataLog(HighLevelLogger.getLog(), true);
+            HighLevelLogger.getInstance().autoGenerateLogs("", "system");
+
+            DriverStation.startDataLog(HighLevelLogger.getInstance().getLog(), true);
 
             uptimer.reset();
             uptimer.start();
@@ -65,10 +67,11 @@ public class Robot extends SRobot {
                 || (!DriverStation.isFMSAttached() && to == RobotState.DISABLED)) {
             // in FMS mode, there's a disabled period of varying length between auto and teleop, so
             // we can't just use that
-            HighLevelLogger.logMessage("***** Robot Disabled *****");
-            HighLevelLogger.logMessage("Total energy use (Joules): " + pdh.getTotalEnergyUsed());
-            HighLevelLogger.logMessage("Loop cycles: " + cycleCounter);
-            HighLevelLogger.logMessage("Uptime (s): " + uptimer.get());
+            HighLevelLogger.getInstance().logMessage("***** Robot Disabled *****");
+            HighLevelLogger.getInstance()
+                    .logMessage("Total energy use (Joules): " + pdh.getTotalEnergyUsed());
+            HighLevelLogger.getInstance().logMessage("Loop cycles: " + cycleCounter);
+            HighLevelLogger.getInstance().logMessage("Uptime (s): " + uptimer.get());
         }
     }
 
@@ -76,7 +79,7 @@ public class Robot extends SRobot {
     public void periodic(RobotState state) {
         CommandScheduler.getInstance().run();
 
-        HighLevelLogger.logPeriodic();
+        HighLevelLogger.getInstance().updateLogs();
 
         cycleCounter++;
 

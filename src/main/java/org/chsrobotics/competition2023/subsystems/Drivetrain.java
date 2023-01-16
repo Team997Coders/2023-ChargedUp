@@ -32,8 +32,10 @@ public class Drivetrain implements Subsystem {
     public void setSimState(double leftMeters, double rightMeters) {
         if (!Robot.isReal()) {
         } else {
-            HighLevelLogger.logWarning("Sim state should not be set on a real robot!");
-            HighLevelLogger.logWarning("There might be sim code still running somewhere!");
+            HighLevelLogger.getInstance()
+                    .logWarning("Sim state should not be set on a real robot!");
+            HighLevelLogger.getInstance()
+                    .logWarning("There might be sim code still running somewhere!");
         }
     }
 }

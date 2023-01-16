@@ -35,8 +35,10 @@ public class InertialMeasurement implements Subsystem {
             double pitch, double yaw, double roll, double xAccel, double yAccel, double zAccel) {
         if (!Robot.isReal()) {
         } else {
-            HighLevelLogger.logWarning("Sim state should not be set on a real robot!");
-            HighLevelLogger.logWarning("There might be sim code still running somewhere!");
+            HighLevelLogger.getInstance()
+                    .logWarning("Sim state should not be set on a real robot!");
+            HighLevelLogger.getInstance()
+                    .logWarning("There might be sim code still running somewhere!");
         }
     }
 }
