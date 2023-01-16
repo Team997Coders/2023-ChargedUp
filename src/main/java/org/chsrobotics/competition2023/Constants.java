@@ -41,17 +41,21 @@ public final class Constants {
             public static final PoseStrategy DEFAULT_POSE_STRATEGY =
                     PoseStrategy.CLOSEST_TO_REFERENCE_POSE;
 
-            public static final String CAMERA_A_NAME = "CameraA";
+            public static final String AT_CAMERA_A_NAME = "CameraA";
+            public static final String AT_CAMERA_B_NAME = "CameraB";
 
-            public static final double CAMERA_A_DIAG_FOV_DEGREES = 180;
+            public static final double AT_CAMERAS_DIAG_FOV_DEGREES = 180;
 
-            public static final int CAMERA_A_HORIZONTAL_RESOLUTION_PX = 720;
-            public static final int CAMERA_A_VERTICAL_RESOLUTION_PX = 540;
+            public static final int AT_CAMERAS_HORIZONTAL_RESOLUTION_PX = 720;
+            public static final int AT_CAMERAS_VERTICAL_RESOLUTION_PX = 540;
 
-            public static final Transform3d ROBOT_TO_CAMERA_A =
+            public static final Transform3d ROBOT_TO_AT_CAMERA_A =
                     new Transform3d(new Translation3d(1, 1, 1), new Rotation3d());
 
-            public static final double CAMERA_A_SIMULATION_MIN_TARGET_AREA = 20;
+            public static final Transform3d ROBOT_TO_AT_CAMERA_B =
+                    new Transform3d(new Translation3d(1, 1, 1), new Rotation3d(0, 0, Math.PI));
+
+            public static final double AT_CAMERAS_SIMULATION_MIN_TARGET_AREA = 20;
         }
 
         public static final class DRIVETRAIN {}

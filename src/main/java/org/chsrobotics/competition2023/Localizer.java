@@ -24,6 +24,7 @@ import edu.wpi.first.math.util.Units;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.InertialMeasurement;
 import org.chsrobotics.competition2023.subsystems.Vision;
+import org.chsrobotics.lib.telemetry.Logger;
 
 public class Localizer {
     private static final Localizer instance = new Localizer();
@@ -42,6 +43,10 @@ public class Localizer {
                     0,
                     new Pose2d());
 
+    private final String subdirString = "localizer";
+
+    private final Logger<Double[]> poseLogger = new Logger<>("pose_m_m_rad", subdirString);
+
     private Localizer() {}
 
     public static Localizer getInstance() {
@@ -49,6 +54,13 @@ public class Localizer {
     }
 
     public void periodic() {
+        poseLogger.update(
+                new Double[] {
+                    getEstimatedPose().getX(),
+                    getEstimatedPose().getY(),
+                    getEstimatedPose().getRotation().getRotations()
+                });
+
         poseEstimator.updateWithTime(
                 Units.millisecondsToSeconds(System.currentTimeMillis()),
                 new Rotation2d(0), // imu yaw

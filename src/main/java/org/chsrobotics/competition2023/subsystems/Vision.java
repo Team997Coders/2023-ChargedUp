@@ -39,25 +39,39 @@ import org.photonvision.targeting.TargetCorner;
 public class Vision implements Subsystem {
     private static final Vision instance = new Vision();
 
-    private final PhotonCamera cameraA = new PhotonCamera(VISION.CAMERA_A_NAME);
+    private final PhotonCamera cameraA = new PhotonCamera(VISION.AT_CAMERA_A_NAME);
+
+    private final PhotonCamera cameraB = new PhotonCamera(VISION.AT_CAMERA_B_NAME);
 
     private final RobotPoseEstimator poseSolver =
             new RobotPoseEstimator(
                     Constants.GLOBAL.TAG_LAYOUT,
                     VISION.DEFAULT_POSE_STRATEGY,
-                    List.of(Pair.of(cameraA, VISION.ROBOT_TO_CAMERA_A)));
+                    List.of(
+                            Pair.of(cameraA, VISION.ROBOT_TO_AT_CAMERA_A),
+                            Pair.of(cameraB, VISION.ROBOT_TO_AT_CAMERA_B)));
 
     private Pair<Pose3d, Double> estimatedPose = Pair.of(new Pose3d(), 0.0);
 
     private final SimVisionSystem simCameraA =
             new SimVisionSystem(
-                    VISION.CAMERA_A_NAME,
-                    VISION.CAMERA_A_DIAG_FOV_DEGREES,
-                    VISION.ROBOT_TO_CAMERA_A.inverse(),
+                    VISION.AT_CAMERA_A_NAME,
+                    VISION.AT_CAMERAS_DIAG_FOV_DEGREES,
+                    VISION.ROBOT_TO_AT_CAMERA_A.inverse(), // TODO: check for photonvision 2023
                     9970,
-                    VISION.CAMERA_A_HORIZONTAL_RESOLUTION_PX,
-                    VISION.CAMERA_A_VERTICAL_RESOLUTION_PX,
-                    VISION.CAMERA_A_SIMULATION_MIN_TARGET_AREA);
+                    VISION.AT_CAMERAS_HORIZONTAL_RESOLUTION_PX,
+                    VISION.AT_CAMERAS_VERTICAL_RESOLUTION_PX,
+                    VISION.AT_CAMERAS_SIMULATION_MIN_TARGET_AREA);
+
+    private final SimVisionSystem simCameraB =
+            new SimVisionSystem(
+                    VISION.AT_CAMERA_B_NAME,
+                    VISION.AT_CAMERAS_DIAG_FOV_DEGREES,
+                    VISION.ROBOT_TO_AT_CAMERA_B.inverse(),
+                    9970,
+                    VISION.AT_CAMERAS_HORIZONTAL_RESOLUTION_PX,
+                    VISION.AT_CAMERAS_VERTICAL_RESOLUTION_PX,
+                    VISION.AT_CAMERAS_SIMULATION_MIN_TARGET_AREA);
 
     private final List<SimVisionTarget> simTargets = new ArrayList<>();
 
@@ -68,16 +82,30 @@ public class Vision implements Subsystem {
     private final Logger<Boolean> aHasTargetsLogger =
             new Logger<>("cameraAHasTargets", subdirString);
 
+    private final Logger<Boolean> bHasTargetsLogger =
+            new Logger<>("cameraBHasTargets", subdirString);
+
     private final Logger<Double> aLatencyLogger =
             new Logger<>("cameraAPipelineLatency_s", subdirString);
+
+    private final Logger<Double> bLatencyLogger =
+            new Logger<>("cameraBPipelineLatency_s", subdirString);
 
     private final Logger<Double[]> aTargetCornersXLogger =
             new Logger<>("cameraATargetCornersX_px", subdirString);
     private final Logger<Double[]> aTargetCornersYLogger =
             new Logger<>("cameraATargetCornersY_px", subdirString);
 
+    private final Logger<Double[]> bTargetCornersXLogger =
+            new Logger<>("cameraBTargetCornersX_px", subdirString);
+    private final Logger<Double[]> bTargetCornersYLogger =
+            new Logger<>("cameraBTargetCornersY_px", subdirString);
+
     private final Logger<Integer> aSetPipelineLogger =
             new Logger<>("cameraASetPipelineIndex", subdirString);
+
+    private final Logger<Integer> bSetPipelineLogger =
+            new Logger<>("cameraBSetPipelineIndex", subdirString);
 
     private final Logger<Pose3d> estimatedPoseLogger =
             new Logger<>("estimatedPoseMeters", subdirString);
@@ -104,20 +132,28 @@ public class Vision implements Subsystem {
         return instance;
     }
 
-    public List<PhotonTrackedTarget> getCameraATargets() {
-        return cameraA.getLatestResult().targets;
+    public double getCameraAPipelineLatencySeconds() {
+        return Units.millisecondsToSeconds(cameraA.getLatestResult().getLatencyMillis());
     }
 
-    public double cameraAPipelineLatencySeconds() {
-        return Units.millisecondsToSeconds(cameraA.getLatestResult().getLatencyMillis());
+    public double getCameraBPipelineLatencySeconds() {
+        return Units.millisecondsToSeconds(cameraB.getLatestResult().getLatencyMillis());
     }
 
     public int getCameraAPipelineIndex() {
         return cameraA.getPipelineIndex();
     }
 
+    public int getCameraBPipelineIndex() {
+        return cameraB.getPipelineIndex();
+    }
+
     public void setCameraAPipelineIndex(int index) {
         cameraA.setPipelineIndex(index);
+    }
+
+    public void setCameraBPipelineIndex(int index) {
+        cameraB.setPipelineIndex(index);
     }
 
     public PoseStrategy getPoseSolverStrategy() {
@@ -134,7 +170,7 @@ public class Vision implements Subsystem {
         Pose2d asPose2d = estimatedPose.getFirst().toPose2d();
         double timestamp =
                 Units.millisecondsToSeconds(System.currentTimeMillis())
-                        - cameraAPipelineLatencySeconds();
+                        - getCameraAPipelineLatencySeconds();
 
         return Pair.of(asPose2d, timestamp);
     }
@@ -154,25 +190,38 @@ public class Vision implements Subsystem {
             }
         }
 
-        ArrayList<Double> cornersX = new ArrayList<>();
-        ArrayList<Double> cornersY = new ArrayList<>();
+        var aCornersX = new ArrayList<>();
+        var aCornersY = new ArrayList<>();
+        var bCornersX = new ArrayList<>();
+        var bCornersY = new ArrayList<>();
 
         for (PhotonTrackedTarget target : cameraA.getLatestResult().targets) {
             for (TargetCorner corner : target.getDetectedCorners()) {
-                cornersX.add(corner.x);
-                cornersY.add(corner.y);
+                aCornersX.add(corner.x);
+                aCornersY.add(corner.y);
             }
         }
 
-        aTargetCornersXLogger.update(cornersX.toArray(new Double[] {}));
-        aTargetCornersYLogger.update(cornersY.toArray(new Double[] {}));
+        for (PhotonTrackedTarget target : cameraB.getLatestResult().targets) {
+            for (TargetCorner corner : target.getDetectedCorners()) {
+                bCornersX.add(corner.x);
+                bCornersY.add(corner.y);
+            }
+        }
 
-        aLatencyLogger.update(
-                Units.millisecondsToSeconds(cameraA.getLatestResult().getLatencyMillis()));
+        aTargetCornersXLogger.update(aCornersX.toArray(new Double[] {}));
+        aTargetCornersYLogger.update(aCornersY.toArray(new Double[] {}));
+        bTargetCornersXLogger.update(bCornersX.toArray(new Double[] {}));
+        bTargetCornersYLogger.update(bCornersY.toArray(new Double[] {}));
+
+        aLatencyLogger.update(getCameraAPipelineLatencySeconds());
+        bLatencyLogger.update(getCameraBPipelineLatencySeconds());
 
         aHasTargetsLogger.update(cameraA.getLatestResult().hasTargets());
+        bHasTargetsLogger.update(cameraB.getLatestResult().hasTargets());
 
         aSetPipelineLogger.update(cameraA.getPipelineIndex());
+        bSetPipelineLogger.update(cameraB.getPipelineIndex());
 
         poseStrategyLogger.update(poseSolver.getStrategy());
     }
@@ -180,5 +229,6 @@ public class Vision implements Subsystem {
     @Override
     public void simulationPeriodic() {
         simCameraA.processFrame(simPose);
+        simCameraB.processFrame(simPose);
     }
 }
