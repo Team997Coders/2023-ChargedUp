@@ -16,10 +16,12 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023.subsystems;
 
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticHub;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import java.util.ArrayList;
+import java.util.List;
 import org.chsrobotics.lib.telemetry.Logger;
 
 public class Pneumatics implements Subsystem {
@@ -53,6 +55,12 @@ public class Pneumatics implements Subsystem {
     public Solenoid getSolenoid(int channel) {
         allocatedSolenoids.add(channel);
         return pnHub.makeSolenoid(channel);
+    }
+
+    public DoubleSolenoid getDoubleSolenoid(int forwardChannel, int reverseChannel) {
+        allocatedSolenoids.addAll(List.of(forwardChannel, reverseChannel));
+
+        return pnHub.makeDoubleSolenoid(forwardChannel, reverseChannel);
     }
 
     @Override
