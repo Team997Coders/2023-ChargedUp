@@ -17,9 +17,9 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.subsystems;
 
 import edu.wpi.first.wpilibj.PneumaticHub;
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import java.util.ArrayList;
 import org.chsrobotics.lib.telemetry.Logger;
 
 public class Pneumatics implements Subsystem {
@@ -29,12 +29,16 @@ public class Pneumatics implements Subsystem {
 
     private final String subdirString = "pneumatics";
 
+    private final ArrayList<Integer> allocatedSolenoids = new ArrayList<>();
+
     private final Logger<Double> compressorCurrentLogger =
             new Logger<>("compressorCurrent_a", subdirString);
     private final Logger<Boolean> compressorActiveLogger =
             new Logger<>("compressorEnabled", subdirString);
     private final Logger<Double> solenoidCurrentLogger =
-            new Logger<>("solenoidCurrent_a", subdirString);
+            new Logger<>("totalSolenoidCurrent_a", subdirString);
+    private final Logger<Integer[]> allocatedSolenoidsLogger =
+            new Logger<>("allocatedSolenoids", subdirString);
 
     private Pneumatics() {
         register();
@@ -47,7 +51,8 @@ public class Pneumatics implements Subsystem {
     }
 
     public Solenoid getSolenoid(int channel) {
-        return new Solenoid(PneumaticsModuleType.CTREPCM, channel);
+        allocatedSolenoids.add(channel);
+        return pnHub.makeSolenoid(channel);
     }
 
     @Override
@@ -55,5 +60,6 @@ public class Pneumatics implements Subsystem {
         compressorActiveLogger.update(pnHub.getCompressor());
         compressorCurrentLogger.update(pnHub.getCompressorCurrent());
         solenoidCurrentLogger.update(pnHub.getSolenoidsTotalCurrent());
+        allocatedSolenoidsLogger.update(allocatedSolenoids.toArray(new Integer[] {}));
     }
 }
