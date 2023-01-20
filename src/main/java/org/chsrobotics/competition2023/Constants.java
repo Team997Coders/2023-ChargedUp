@@ -76,6 +76,12 @@ public final class Constants {
             public static final double DEPLOY_RUN_MOTORS_TIME_BUFFER_SECONDS = 0.1;
         }
 
+        public static final class GRABBER {
+            public static final int SOLENOID_CHANNEL = 0;
+
+            public static final boolean SOLENOID_INVERTED = false;
+        }
+
         public static final class INERTIAL_MEASUREMENT {}
 
         public static final class POWER_DISTRIBUTION_HUB {}

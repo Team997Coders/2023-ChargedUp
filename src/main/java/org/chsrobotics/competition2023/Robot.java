@@ -20,8 +20,12 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
+import org.chsrobotics.competition2023.subsystems.Grabber;
 import org.chsrobotics.competition2023.subsystems.InertialMeasurement;
+import org.chsrobotics.competition2023.subsystems.Intake;
+import org.chsrobotics.competition2023.subsystems.Pneumatics;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
+import org.chsrobotics.competition2023.subsystems.Vision;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.util.SRobot;
 
@@ -35,6 +39,14 @@ public class Robot extends SRobot {
     private static final InertialMeasurement imu = InertialMeasurement.getInstance();
 
     private static final Drivetrain drivetrain = Drivetrain.getInstance();
+
+    private static final Grabber grabber = Grabber.getInstance();
+
+    private static final Intake intake = Intake.getInstance();
+
+    private static final Pneumatics pneumatics = Pneumatics.getInstance();
+
+    private static final Vision vision = Vision.getInstance();
 
     private static final CommandScheduler scheduler = CommandScheduler.getInstance();
 
@@ -77,7 +89,7 @@ public class Robot extends SRobot {
 
     @Override
     public void periodic(RobotState state) {
-        CommandScheduler.getInstance().run();
+        scheduler.run();
 
         HighLevelLogger.getInstance().updateLogs();
 
