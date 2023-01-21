@@ -23,6 +23,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import java.util.List;
+import org.chsrobotics.lib.util.GearRatioHelper;
 import org.photonvision.RobotPoseEstimator.PoseStrategy;
 
 public final class Constants {
@@ -37,6 +38,30 @@ public final class Constants {
     }
 
     public static final class SUBSYSTEM {
+        public static final class DRIVETRAIN {
+            public static final int FRONT_RIGHT_CAN_ID = 0;
+            public static final int BACK_RIGHT_CAN_ID = 0;
+            public static final int FRONT_LEFT_CAN_ID = 0;
+            public static final int BACK_LEFT_CAN_ID = 0;
+
+            public static final boolean FRONT_RIGHT_IS_INVERTED = false;
+            public static final boolean BACK_RIGHT_IS_INVERTED = false;
+            public static final boolean FRONT_LEFT_IS_INVERTED = false;
+            public static final boolean BACK_LEFT_IS_INVERTED = false;
+
+            public static final boolean LEFT_SHIFTER_SOLENOID_IS_INVERTED = false;
+            public static final boolean RIGHT_SHIFTER_SOLENOID_IS_INVERTED = false;
+
+            public static final int LEFT_SHIFTER_SOLENOID_CHANNEL = 0;
+            public static final int RIGHT_SHIFTER_SOLENOID_CHANNEL = 0;
+
+            public static final GearRatioHelper SLOW_GEAR_RATIO = new GearRatioHelper(1, 1);
+
+            public static final GearRatioHelper FAST_GEAR_RATIO = new GearRatioHelper(2, 1);
+
+            public static final double WHEEL_RADIUS_METERS = 0;
+        }
+
         public static final class VISION {
             public static final PoseStrategy DEFAULT_POSE_STRATEGY =
                     PoseStrategy.CLOSEST_TO_REFERENCE_POSE;
@@ -57,8 +82,6 @@ public final class Constants {
 
             public static final double AT_CAMERAS_SIMULATION_MIN_TARGET_AREA = 20;
         }
-
-        public static final class DRIVETRAIN {}
 
         public static final class INERTIAL_MEASUREMENT {}
 
