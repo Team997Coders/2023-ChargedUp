@@ -23,6 +23,8 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.Robot;
+import org.chsrobotics.lib.math.UtilityMath;
+import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.telemetry.Logger;
 
@@ -46,6 +48,12 @@ public class Drivetrain implements Subsystem {
             Pneumatics.getInstance()
                     .getSolenoid(Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_SHIFTER_SOLENOID_CHANNEL);
 
+    private final DifferentiatingFilter rightVelocityFilter = new DifferentiatingFilter();
+    private final DifferentiatingFilter leftVelocityFilter = new DifferentiatingFilter();
+
+    private final DifferentiatingFilter rightAccelerationFilter = new DifferentiatingFilter();
+    private final DifferentiatingFilter leftAccelerationFilter = new DifferentiatingFilter();
+
     private final String subdirString = "drivetrain";
 
     private final Logger<Double> leftSetVoltageLogger =
@@ -65,6 +73,28 @@ public class Drivetrain implements Subsystem {
             new Logger<>("isLeftShifterOn", subdirString);
     private final Logger<Boolean> isRightShifterOnLogger =
             new Logger<>("isRightShifterOn", subdirString);
+    private final Logger<Double> rightPositionLogger =
+            new Logger<>("rightSensorPosition_meters", subdirString);
+    private final Logger<Double> leftPositionLogger =
+            new Logger<>("leftSensorPosition_meters", subdirString);
+    private final Logger<Double> rightVelocityLogger =
+            new Logger<>("rightVelocity_mps", subdirString);
+    private final Logger<Double> leftVelocityLogger =
+            new Logger<>("leftVeloctiy_mps", subdirString);
+    private final Logger<Double> rightAccelerationLogger =
+            new Logger<>("rightAcceleration_mpsSquared", subdirString);
+    private final Logger<Double> leftAccelerationLogger =
+            new Logger<>("leftAcceleration_mpsSquared", subdirString);
+    private final Logger<Double> frontRightCurrentLogger =
+            new Logger<>("frontRightCurrent_amps", subdirString);
+    private final Logger<Double> backRightCurrentLogger =
+            new Logger<>("backRightCurrent_amps", subdirString);
+    private final Logger<Double> frontLeftCurrentLogger =
+            new Logger<>("frontLeftCurrent_amps", subdirString);
+    private final Logger<Double> backLeftCurrentLogger =
+            new Logger<>("backLeftCurrent_amps", subdirString);
+
+    private boolean shiftersInSlow = true;
 
     private Drivetrain() {
         register();
@@ -98,62 +128,54 @@ public class Drivetrain implements Subsystem {
         return (frontLeftSparkMax.getIdleMode() == IdleMode.kCoast);
     }
 
-    public void setLeftShifterOn(boolean isLeftShifterOn) {
+    public void setShifters(boolean slow) {
         if (Constants.SUBSYSTEM.DRIVETRAIN.LEFT_SHIFTER_SOLENOID_IS_INVERTED) {
-            leftShifter.set(!isLeftShifterOn);
-            isLeftShifterOnLogger.update(!isLeftShifterOn);
+            leftShifter.set(!slow);
+            isLeftShifterOnLogger.update(!slow);
+            shiftersInSlow = false;
         } else {
-            leftShifter.set(isLeftShifterOn);
-            isLeftShifterOnLogger.update(isLeftShifterOn);
+            leftShifter.set(slow);
+            isLeftShifterOnLogger.update(slow);
+            shiftersInSlow = true;
         }
-    }
-
-    public void setRightShifterOn(boolean isRightShifterOn) {
-        if (Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_SHIFTER_SOLENOID_IS_INVERTED) {
-            rightShifter.set(!isRightShifterOn);
-            isRightShifterOnLogger.update(!isRightShifterOn);
-        } else {
-            rightShifter.set(isRightShifterOn);
-            isRightShifterOnLogger.update(isRightShifterOn);
-        }
-    }
-
-    public boolean getLeftShifterSlow() {
-
-        if (Constants.SUBSYSTEM.DRIVETRAIN.LEFT_SHIFTER_SOLENOID_IS_INVERTED) {
-            return !leftShifter.get();
-        } else {
-            return leftShifter.get();
-        }
-    }
-
-    public boolean getRightShifterSlow() {
 
         if (Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_SHIFTER_SOLENOID_IS_INVERTED) {
-            return !rightShifter.get();
+            rightShifter.set(!slow);
+            isRightShifterOnLogger.update(!slow);
+            shiftersInSlow = false;
         } else {
-            return rightShifter.get();
+            rightShifter.set(slow);
+            isRightShifterOnLogger.update(slow);
+            shiftersInSlow = true;
         }
     }
 
-    public double getFrontRightSensorPosition() {
-        return metersFromNEORotations(frontRightSparkMax.getEncoder().getPosition());
+    public boolean getShifterSlow() {
+        return shiftersInSlow;
     }
 
-    public double getBackRightSensorPosition() {
-        return metersFromNEORotations(backRightSparkMax.getEncoder().getPosition());
+    public double getRightSensorPosition() {
+        double rightSensorAverage =
+                UtilityMath.arithmeticMean(
+                        new double[] {
+                            frontRightSparkMax.getEncoder().getPosition(),
+                            backRightSparkMax.getEncoder().getPosition()
+                        });
+        return metersFromNEORotations(rightSensorAverage);
     }
 
-    public double getFrontLeftSensorPosition() {
-        return metersFromNEORotations(frontLeftSparkMax.getEncoder().getPosition());
-    }
-
-    public double getbackLeftSensorPosition() {
-        return metersFromNEORotations(backLeftSparkMax.getEncoder().getPosition());
+    public double getLeftSensorPosition() {
+        double leftSensorAverage =
+                UtilityMath.arithmeticMean(
+                        new double[] {
+                            frontLeftSparkMax.getEncoder().getPosition(),
+                            backLeftSparkMax.getEncoder().getPosition()
+                        });
+        return metersFromNEORotations(leftSensorAverage);
     }
 
     private double metersFromNEORotations(double rotations) {
-        if (getRightShifterSlow()) {
+        if (getShifterSlow()) {
             return Constants.SUBSYSTEM.DRIVETRAIN.SLOW_GEAR_RATIO.outputFromInput(rotations)
                     * 2
                     * Math.PI
@@ -186,5 +208,19 @@ public class Drivetrain implements Subsystem {
         frontRightTemperatureLogger.update(frontRightSparkMax.getMotorTemperature());
         backLeftTemperatureLogger.update(backLeftSparkMax.getMotorTemperature());
         backRightTemperatureLogger.update(backRightSparkMax.getMotorTemperature());
+        frontRightCurrentLogger.update(frontRightSparkMax.getOutputCurrent());
+        backRightCurrentLogger.update(backRightSparkMax.getOutputCurrent());
+        frontLeftCurrentLogger.update(frontLeftSparkMax.getOutputCurrent());
+        backLeftCurrentLogger.update(backLeftSparkMax.getOutputCurrent());
+        rightPositionLogger.update(getRightSensorPosition());
+        leftPositionLogger.update(getLeftSensorPosition());
+        rightVelocityLogger.update(rightVelocityFilter.calculate(getRightSensorPosition()));
+        leftVelocityLogger.update(leftVelocityFilter.calculate(getLeftSensorPosition()));
+        rightAccelerationLogger.update(
+                rightAccelerationFilter.calculate(
+                        rightVelocityFilter.calculate(getRightSensorPosition())));
+        leftAccelerationLogger.update(
+                leftAccelerationFilter.calculate(
+                        leftVelocityFilter.calculate(getLeftSensorPosition())));
     }
 }
