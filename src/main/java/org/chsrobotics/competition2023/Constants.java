@@ -23,6 +23,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import java.util.List;
+import org.chsrobotics.lib.util.GearRatioHelper;
 import org.photonvision.RobotPoseEstimator.PoseStrategy;
 
 public final class Constants {
@@ -63,5 +64,33 @@ public final class Constants {
         public static final class INERTIAL_MEASUREMENT {}
 
         public static final class POWER_DISTRIBUTION_HUB {}
+
+        public static final class ARM {
+            public static final int DISTAL_NEO_CAN_ID = 0;
+
+            public static final int LOCAL_NEO_A_CAN_ID = 0;
+
+            public static final int LOCAL_NEO_B_CAN_ID = 0;
+
+            public static final int DISTAL_POTENTIOMETER_ANALOG_CHANNEL = 1;
+
+            public static final int LOCAL_POTENTIOMETER_ANALOG_CHANNEL = 2;
+
+            public static final int DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 0;
+
+            public static final int LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 0;
+
+            public static final GearRatioHelper DISTAL_POTENTIOMTER_CONVERSION_HELPER =
+                    new GearRatioHelper(1, 1);
+
+            public static final GearRatioHelper LOCAL_POTENTIOMETER_CONVERSION_HELPER =
+                    new GearRatioHelper(1, 1);
+
+            public static final boolean DISTAL_NEO_INVERTED = false;
+
+            public static final boolean LOCAL_NEO_A_INVERTED = false;
+
+            public static final boolean LOCAL_NEO_B_INVERTED = false;
+        }
     }
 }
