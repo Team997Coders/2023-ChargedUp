@@ -17,6 +17,7 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.subsystems;
 
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
@@ -75,6 +76,9 @@ public class Intake implements Subsystem {
 
         leftMotor.setInverted(Constants.SUBSYSTEM.INTAKE.LEFT_MOTOR_INVERTED);
         rightMotor.setInverted(Constants.SUBSYSTEM.INTAKE.RIGHT_MOTOR_INVERTED);
+
+        leftMotor.setIdleMode(IdleMode.kCoast);
+        rightMotor.setIdleMode(IdleMode.kCoast);
 
         timeBuffer.reset();
         timeBuffer.stop();
