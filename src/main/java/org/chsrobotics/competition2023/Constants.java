@@ -115,4 +115,18 @@ public final class Constants {
             public static final boolean LOCAL_NEO_B_INVERTED = false;
         }
     }
+
+    public static final class COMMAND {
+        public static final class TELEOP_DRIVE {
+            public static final double ACCELERATION_LIMITER_TRACKWIDTH = 0;
+            public static final double ACCELERATION_LIMITER_MAX_LINEAR_ACCEL = 0;
+            public static final double ACCELERATION_LIMITER_MAX_ANGULAR_ACCEL = 0;
+
+            public static final double FEEDFORWARD_KVLINEAR = 0;
+            public static final double FEEDFORWARD_KALINEAR = 0;
+            public static final double FEEDFORWARD_KVANGULAR = 0;
+            public static final double FEEDFORWARD_KAANGULAR = 0;
+            public static final double FEEDFORWARD_TRACKWIDTH = 0;
+        }
+    }
 }

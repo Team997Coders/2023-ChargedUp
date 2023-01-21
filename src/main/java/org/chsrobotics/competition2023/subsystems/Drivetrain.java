@@ -188,6 +188,22 @@ public class Drivetrain implements Subsystem {
         }
     }
 
+    public double getLeftSideVelocity() {
+        return leftVelocityFilter.getCurrentOutput();
+    }
+
+    public double getRightSideVelocity() {
+        return rightVelocityFilter.getCurrentOutput();
+    }
+
+    public double getLeftSideAcceleration() {
+        return leftAccelerationFilter.getCurrentOutput();
+    }
+
+    public double getRightSideAcceleration() {
+        return rightAccelerationFilter.getCurrentOutput();
+    }
+
     public static Drivetrain getInstance() {
         return instance;
     }

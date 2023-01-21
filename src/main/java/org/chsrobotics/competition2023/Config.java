@@ -16,4 +16,17 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023;
 
-public class Config {}
+import org.chsrobotics.lib.drive.differential.DifferentialDriveMode;
+import org.chsrobotics.lib.telemetry.DashboardChooser;
+
+public class Config {
+    public static final class TELEOP_DRIVE_MODES {
+        public static enum MODES implements DashboardChooser.Option {
+            MODEA,
+            MODEB;
+        }
+
+        public static final DashboardChooser<DifferentialDriveMode> MODE_CHOOSER =
+                DashboardChooser.fromEnum(MODES.class, MODES.MODEA);
+    }
+}
