@@ -22,6 +22,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import java.util.List;
 import org.chsrobotics.lib.util.GearRatioHelper;
 import org.photonvision.RobotPoseEstimator.PoseStrategy;
@@ -60,6 +61,8 @@ public final class Constants {
             public static final GearRatioHelper FAST_GEAR_RATIO = new GearRatioHelper(2, 1);
 
             public static final double WHEEL_RADIUS_METERS = 0;
+
+            public static final double TRACK_WIDTH_METERS = 0.0;
         }
 
         public static final class VISION {
@@ -113,6 +116,22 @@ public final class Constants {
             public static final boolean LOCAL_NEO_A_INVERTED = false;
 
             public static final boolean LOCAL_NEO_B_INVERTED = false;
+        }
+    }
+
+    public static final class COMMAND {
+        public static final class TRAJECTORY_FOLLOWING {
+            public static final double KS_VOLTS = 1.0;
+            public static final double KV_VOLTS_SECONDS_PER_METER = 1.0;
+            public static final double KA_VOLTS_SECONDSSQUARED_PER_METER = 1.0;
+            public static final double KP_DRIVE_VEL = 1.0;
+            public static final DifferentialDriveKinematics K_DRIVE_KINEMATICS =
+                    new DifferentialDriveKinematics(
+                            Constants.SUBSYSTEM.DRIVETRAIN.TRACK_WIDTH_METERS);
+            public static final double K_MAX_SPEED_METERS_PER_SECOND = 1.0;
+            public static final double K_MAX_ACCELERATION_METERS_PER_SECOND_SQUARED = 1.0;
+            public static final double K_RAMSETE_B = 1.0;
+            public static final double K_RAMSETE_ZETA = 1.0;
         }
     }
 }
