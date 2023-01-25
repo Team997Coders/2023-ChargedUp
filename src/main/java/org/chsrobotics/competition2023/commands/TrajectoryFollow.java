@@ -16,9 +16,13 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023.commands;
 
+import edu.wpi.first.math.controller.DifferentialDriveFeedforward;
+import edu.wpi.first.math.controller.DifferentialDriveWheelVoltages;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.constraint.DifferentialDriveVoltageConstraint;
@@ -29,27 +33,7 @@ import org.chsrobotics.competition2023.Localizer;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 
 public class TrajectoryFollow extends CommandBase {
-
-    DifferentialDriveVoltageConstraint autoVoltageConstraint =
-            new DifferentialDriveVoltageConstraint(
-                    new SimpleMotorFeedforward(
-                            Constants.COMMAND.TRAJECTORY_FOLLOWING.KS_VOLTS,
-                            Constants.COMMAND.TRAJECTORY_FOLLOWING.KV_VOLTS_SECONDS_PER_METER,
-                            Constants.COMMAND
-                                    .TRAJECTORY_FOLLOWING
-                                    .KA_VOLTS_SECONDSSQUARED_PER_METER),
-                    Constants.COMMAND.TRAJECTORY_FOLLOWING.K_DRIVE_KINEMATICS,
-                    10);
-    TrajectoryConfig config =
-            new TrajectoryConfig(
-                            Constants.COMMAND.TRAJECTORY_FOLLOWING.K_MAX_SPEED_METERS_PER_SECOND,
-                            Constants.COMMAND
-                                    .TRAJECTORY_FOLLOWING
-                                    .K_MAX_ACCELERATION_METERS_PER_SECOND_SQUARED)
-                    // Add kinematics to ensure max speed is actually obeyed
-                    .setKinematics(Constants.COMMAND.TRAJECTORY_FOLLOWING.K_DRIVE_KINEMATICS)
-                    // Apply the voltage constraint
-                    .addConstraint(autoVoltageConstraint);
+    
     private Drivetrain drivetrain;
     private Trajectory trajectory;
     private Timer timer = new Timer();
@@ -57,13 +41,8 @@ public class TrajectoryFollow extends CommandBase {
             new RamseteController(
                     Constants.COMMAND.TRAJECTORY_FOLLOWING.K_RAMSETE_B,
                     Constants.COMMAND.TRAJECTORY_FOLLOWING.K_RAMSETE_ZETA);
-    private SimpleMotorFeedforward simpleFeedForward =
-            new SimpleMotorFeedforward(
-                    Constants.COMMAND.TRAJECTORY_FOLLOWING.KS_VOLTS,
-                    Constants.COMMAND.TRAJECTORY_FOLLOWING.KV_VOLTS_SECONDS_PER_METER,
-                    Constants.COMMAND.TRAJECTORY_FOLLOWING.KA_VOLTS_SECONDSSQUARED_PER_METER);
-    private PIDController PID =
-            new PIDController(Constants.COMMAND.TRAJECTORY_FOLLOWING.KP_DRIVE_VEL, 0, 0);
+   
+    private DifferentialDriveFeedforward feedforward= new DifferentialDriveFeedforward(Constants.COMMAND.TRAJECTORY_FOLLOWING.FEED_FORWARD_KV,Constants.COMMAND.TRAJECTORY_FOLLOWING.FEED_FORWARD_KA , Constants.COMMAND.TRAJECTORY_FOLLOWING.FEED_FORWARD_ANGULAR_KV, Constants.COMMAND.TRAJECTORY_FOLLOWING.FEED_FORWARD_ANGULAR_KA);
 
     public TrajectoryFollow(Drivetrain drivetrain, Trajectory trajectory) {
         addRequirements(drivetrain);
@@ -79,14 +58,14 @@ public class TrajectoryFollow extends CommandBase {
 
     @Override
     public void execute() {
-        var chassisSpeed =
+        ChassisSpeeds chassisSpeed = 
                 ramseteController.calculate(
                         Localizer.getInstance().getEstimatedPose(), trajectory.sample(timer.get()));
-        var wheelSpeeds =
+        DifferentialDriveWheelSpeeds wheelSpeeds =
                 Constants.COMMAND.TRAJECTORY_FOLLOWING.K_DRIVE_KINEMATICS.toWheelSpeeds(
                         chassisSpeed);
-        var voltages = simpleFeedForward.calculate(0);
-        drivetrain.setLeftVoltages(PID.calculate(voltages));
-        drivetrain.setRightVoltages(PID.calculate(voltages));
+        DifferentialDriveWheelVoltages voltages = feedforward.calculate(/*no drivetrain velocity yet */ 0, wheelSpeeds.leftMetersPerSecond, /*still */0, wheelSpeeds.rightMetersPerSecond,0.02 );
+        drivetrain.setLeftVoltages(voltages.left);
+        drivetrain.setRightVoltages(voltages.right);
     }
 }

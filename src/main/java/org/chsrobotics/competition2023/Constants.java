@@ -143,9 +143,10 @@ public final class Constants {
 
     public static final class COMMAND {
         public static final class TRAJECTORY_FOLLOWING {
-            public static final double KS_VOLTS = 1.0;
-            public static final double KV_VOLTS_SECONDS_PER_METER = 1.0;
-            public static final double KA_VOLTS_SECONDSSQUARED_PER_METER = 1.0;
+            public static final double FEED_FORWARD_KV = 1.0;
+            public static final double FEED_FORWARD_KA = 1.0;
+            public static final double FEED_FORWARD_ANGULAR_KV = 1.0;
+            public static final double FEED_FORWARD_ANGULAR_KA = 1.0;
             public static final double KP_DRIVE_VEL = 1.0;
             public static final DifferentialDriveKinematics K_DRIVE_KINEMATICS =
                     new DifferentialDriveKinematics(
