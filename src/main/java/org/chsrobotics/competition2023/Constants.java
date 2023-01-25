@@ -86,6 +86,28 @@ public final class Constants {
             public static final double AT_CAMERAS_SIMULATION_MIN_TARGET_AREA = 20;
         }
 
+        public static final class INTAKE {
+            public static final int LEFT_MOTOR_CANID = 0;
+            public static final int RIGHT_MOTOR_CANID = 0;
+
+            public static final int LEFT_DEPLOY_SOLENOID_CHANNEL = 0;
+            public static final int RIGHT_DEPLOY_SOLENOID_CHANNEL = 0;
+
+            public static final boolean LEFT_MOTOR_INVERTED = false;
+            public static final boolean RIGHT_MOTOR_INVERTED = false;
+
+            public static final boolean LEFT_DEPLOY_SOLENOID_INVERTED = false;
+            public static final boolean RIGHT_DEPLOY_SOLENOID_INVERTED = false;
+
+            public static final double DEPLOY_RUN_MOTORS_TIME_BUFFER_SECONDS = 0.1;
+        }
+
+        public static final class GRABBER {
+            public static final int SOLENOID_CHANNEL = 0;
+
+            public static final boolean SOLENOID_INVERTED = false;
+        }
+
         public static final class INERTIAL_MEASUREMENT {}
 
         public static final class POWER_DISTRIBUTION_HUB {}
