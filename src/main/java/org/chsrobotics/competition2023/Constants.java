@@ -39,10 +39,10 @@ public final class Constants {
 
     public static final class SUBSYSTEM {
         public static final class DRIVETRAIN {
-            public static final int FRONT_RIGHT_CAN_ID = 0;
-            public static final int BACK_RIGHT_CAN_ID = 0;
-            public static final int FRONT_LEFT_CAN_ID = 0;
-            public static final int BACK_LEFT_CAN_ID = 0;
+            public static final int FRONT_RIGHT_CAN_ID = 2;
+            public static final int BACK_RIGHT_CAN_ID = 4;
+            public static final int FRONT_LEFT_CAN_ID = 1;
+            public static final int BACK_LEFT_CAN_ID = 3;
 
             public static final boolean FRONT_RIGHT_IS_INVERTED = false;
             public static final boolean BACK_RIGHT_IS_INVERTED = false;
