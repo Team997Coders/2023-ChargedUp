@@ -62,11 +62,13 @@ public class Robot extends SRobot {
     private static final Timer uptimer = new Timer();
 
     private final TrajectoryConfig trajectoryConfig = new TrajectoryConfig(4, 2);
+
     private final Trajectory trajectory =
             TrajectoryGenerator.generateTrajectory(
                     List.of(new Pose2d(0, 0, new Rotation2d()), new Pose2d(4, 4, new Rotation2d())),
                     trajectoryConfig);
-    private final TrajectoryFollow trajectoryFollow = new TrajectoryFollow(drivetrain, trajectory);
+    private final TrajectoryFollow trajectoryFollow =
+            new TrajectoryFollow(drivetrain, trajectory, true);
 
     @Override
     public void stateTransition(RobotState from, RobotState to) {
