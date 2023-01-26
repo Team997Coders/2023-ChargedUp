@@ -14,19 +14,8 @@ See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. 
 If not, see <https://www.gnu.org/licenses/>.
 */
-package org.chsrobotics.competition2023;
+package org.chsrobotics.competition2023.commands;
 
-import org.chsrobotics.lib.drive.differential.DifferentialDriveMode;
-import org.chsrobotics.lib.telemetry.DashboardChooser;
+import edu.wpi.first.wpilibj2.command.CommandBase;
 
-public class Config {
-    public static final class TELEOP_DRIVE_MODES {
-        public static enum MODES implements DashboardChooser.Option {
-            MODEA,
-            MODEB;
-        }
-
-        public static final DashboardChooser<DifferentialDriveMode> MODE_CHOOSER =
-                DashboardChooser.fromEnum(MODES.class, MODES.MODEA);
-    }
-}
+public class AutoBalance extends CommandBase {}

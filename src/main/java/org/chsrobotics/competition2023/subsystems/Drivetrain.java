@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.Robot;
+import org.chsrobotics.competition2023.Simulation;
 import org.chsrobotics.lib.math.UtilityMath;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
@@ -96,6 +97,9 @@ public class Drivetrain implements Subsystem {
 
     private boolean shiftersInSlow = true;
 
+    private double setLeftVoltage = 0;
+    private double setRightVoltage = 0;
+
     private Drivetrain() {
         register();
         frontLeftSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.FRONT_LEFT_IS_INVERTED);
@@ -108,12 +112,16 @@ public class Drivetrain implements Subsystem {
         frontRightSparkMax.setVoltage(voltage);
         backRightSparkMax.setVoltage(voltage);
         rightSetVoltageLogger.update(voltage);
+
+        setRightVoltage = voltage;
     }
 
     public void setLeftVoltages(double voltage) {
         frontLeftSparkMax.setVoltage(voltage);
         backLeftSparkMax.setVoltage(voltage);
         leftSetVoltageLogger.update(voltage);
+
+        setLeftVoltage = voltage;
     }
 
     public void setBrakeMode(boolean isCoastMode) {
@@ -188,6 +196,22 @@ public class Drivetrain implements Subsystem {
         }
     }
 
+    public double getLeftSideVelocity() {
+        return leftVelocityFilter.getCurrentOutput();
+    }
+
+    public double getRightSideVelocity() {
+        return rightVelocityFilter.getCurrentOutput();
+    }
+
+    public double getLeftSideAcceleration() {
+        return leftAccelerationFilter.getCurrentOutput();
+    }
+
+    public double getRightSideAcceleration() {
+        return rightAccelerationFilter.getCurrentOutput();
+    }
+
     public static Drivetrain getInstance() {
         return instance;
     }
@@ -204,6 +228,8 @@ public class Drivetrain implements Subsystem {
 
     @Override
     public void periodic() {
+        Simulation.getInstance().setDrivetrainInputs(setLeftVoltage, setRightVoltage);
+
         frontLeftTemperatureLogger.update(frontLeftSparkMax.getMotorTemperature());
         frontRightTemperatureLogger.update(frontRightSparkMax.getMotorTemperature());
         backLeftTemperatureLogger.update(backLeftSparkMax.getMotorTemperature());

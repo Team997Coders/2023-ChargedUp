@@ -40,10 +40,10 @@ public final class Constants {
 
     public static final class SUBSYSTEM {
         public static final class DRIVETRAIN {
-            public static final int FRONT_RIGHT_CAN_ID = 0;
-            public static final int BACK_RIGHT_CAN_ID = 0;
-            public static final int FRONT_LEFT_CAN_ID = 0;
-            public static final int BACK_LEFT_CAN_ID = 0;
+            public static final int FRONT_RIGHT_CAN_ID = 2;
+            public static final int BACK_RIGHT_CAN_ID = 4;
+            public static final int FRONT_LEFT_CAN_ID = 1;
+            public static final int BACK_LEFT_CAN_ID = 3;
 
             public static final boolean FRONT_RIGHT_IS_INVERTED = false;
             public static final boolean BACK_RIGHT_IS_INVERTED = false;
@@ -53,8 +53,8 @@ public final class Constants {
             public static final boolean LEFT_SHIFTER_SOLENOID_IS_INVERTED = false;
             public static final boolean RIGHT_SHIFTER_SOLENOID_IS_INVERTED = false;
 
-            public static final int LEFT_SHIFTER_SOLENOID_CHANNEL = 0;
-            public static final int RIGHT_SHIFTER_SOLENOID_CHANNEL = 0;
+            public static final int LEFT_SHIFTER_SOLENOID_CHANNEL = 2;
+            public static final int RIGHT_SHIFTER_SOLENOID_CHANNEL = 1;
 
             public static final GearRatioHelper SLOW_GEAR_RATIO = new GearRatioHelper(1, 1);
 
@@ -113,11 +113,11 @@ public final class Constants {
         public static final class POWER_DISTRIBUTION_HUB {}
 
         public static final class ARM {
-            public static final int DISTAL_NEO_CAN_ID = 0;
+            public static final int DISTAL_NEO_CAN_ID = 8;
 
-            public static final int LOCAL_NEO_A_CAN_ID = 0;
+            public static final int LOCAL_NEO_A_CAN_ID = 9;
 
-            public static final int LOCAL_NEO_B_CAN_ID = 0;
+            public static final int LOCAL_NEO_B_CAN_ID = 10;
 
             public static final int DISTAL_POTENTIOMETER_ANALOG_CHANNEL = 1;
 
@@ -155,6 +155,17 @@ public final class Constants {
             public static final double K_MAX_ACCELERATION_METERS_PER_SECOND_SQUARED = 1.0;
             public static final double K_RAMSETE_B = 1.0;
             public static final double K_RAMSETE_ZETA = 1.0;
+        }
+        public static final class TELEOP_DRIVE {
+            public static final double ACCELERATION_LIMITER_TRACKWIDTH = 0;
+            public static final double ACCELERATION_LIMITER_MAX_LINEAR_ACCEL = 0;
+            public static final double ACCELERATION_LIMITER_MAX_ANGULAR_ACCEL = 0;
+
+            public static final double FEEDFORWARD_KVLINEAR = 0;
+            public static final double FEEDFORWARD_KALINEAR = 0;
+            public static final double FEEDFORWARD_KVANGULAR = 0;
+            public static final double FEEDFORWARD_KAANGULAR = 0;
+            public static final double FEEDFORWARD_TRACKWIDTH = 0;
         }
     }
 }
