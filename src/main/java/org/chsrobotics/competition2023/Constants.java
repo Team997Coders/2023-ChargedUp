@@ -87,11 +87,11 @@ public final class Constants {
         }
 
         public static final class INTAKE {
-            public static final int LEFT_MOTOR_CANID = 0;
-            public static final int RIGHT_MOTOR_CANID = 0;
+            public static final int LEFT_MOTOR_CANID = 11;
+            public static final int RIGHT_MOTOR_CANID = 12;
 
-            public static final int LEFT_DEPLOY_SOLENOID_CHANNEL = 0;
-            public static final int RIGHT_DEPLOY_SOLENOID_CHANNEL = 0;
+            public static final int LEFT_DEPLOY_SOLENOID_CHANNEL = 5;
+            public static final int RIGHT_DEPLOY_SOLENOID_CHANNEL = 6;
 
             public static final boolean LEFT_MOTOR_INVERTED = false;
             public static final boolean RIGHT_MOTOR_INVERTED = false;
@@ -156,6 +156,7 @@ public final class Constants {
             public static final double K_RAMSETE_B = 1.0;
             public static final double K_RAMSETE_ZETA = 1.0;
         }
+
         public static final class TELEOP_DRIVE {
             public static final double ACCELERATION_LIMITER_TRACKWIDTH = 0;
             public static final double ACCELERATION_LIMITER_MAX_LINEAR_ACCEL = 0;
