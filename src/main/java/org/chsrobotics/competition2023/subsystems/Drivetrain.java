@@ -100,6 +100,9 @@ public class Drivetrain implements Subsystem {
     private double setLeftVoltage = 0;
     private double setRightVoltage = 0;
 
+    private double simLeftPositionMeters = 0;
+    private double simRightPositionMeters = 0;
+
     private Drivetrain() {
         register();
         frontLeftSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.FRONT_LEFT_IS_INVERTED);
@@ -163,23 +166,31 @@ public class Drivetrain implements Subsystem {
     }
 
     public double getRightSensorPosition() {
-        double rightSensorAverage =
-                UtilityMath.arithmeticMean(
-                        new double[] {
-                            frontRightSparkMax.getEncoder().getPosition(),
-                            backRightSparkMax.getEncoder().getPosition()
-                        });
-        return metersFromNEORotations(rightSensorAverage);
+        if (Robot.isReal()) {
+            double rightSensorAverage =
+                    UtilityMath.arithmeticMean(
+                            new double[] {
+                                frontRightSparkMax.getEncoder().getPosition(),
+                                backRightSparkMax.getEncoder().getPosition()
+                            });
+            return metersFromNEORotations(rightSensorAverage);
+        } else {
+            return simRightPositionMeters;
+        }
     }
 
     public double getLeftSensorPosition() {
-        double leftSensorAverage =
-                UtilityMath.arithmeticMean(
-                        new double[] {
-                            frontLeftSparkMax.getEncoder().getPosition(),
-                            backLeftSparkMax.getEncoder().getPosition()
-                        });
-        return metersFromNEORotations(leftSensorAverage);
+        if (Robot.isReal()) {
+            double leftSensorAverage =
+                    UtilityMath.arithmeticMean(
+                            new double[] {
+                                frontLeftSparkMax.getEncoder().getPosition(),
+                                backLeftSparkMax.getEncoder().getPosition()
+                            });
+            return metersFromNEORotations(leftSensorAverage);
+        } else {
+            return simLeftPositionMeters;
+        }
     }
 
     private double metersFromNEORotations(double rotations) {
@@ -218,6 +229,8 @@ public class Drivetrain implements Subsystem {
 
     public void setSimState(double leftMeters, double rightMeters) {
         if (!Robot.isReal()) {
+            simLeftPositionMeters = leftMeters;
+            simRightPositionMeters = rightMeters;
         } else {
             HighLevelLogger.getInstance()
                     .logWarning("Sim state should not be set on a real robot!");
