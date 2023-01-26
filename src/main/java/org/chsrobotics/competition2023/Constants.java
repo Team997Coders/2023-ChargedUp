@@ -52,8 +52,8 @@ public final class Constants {
             public static final boolean LEFT_SHIFTER_SOLENOID_IS_INVERTED = false;
             public static final boolean RIGHT_SHIFTER_SOLENOID_IS_INVERTED = false;
 
-            public static final int LEFT_SHIFTER_SOLENOID_CHANNEL = 0;
-            public static final int RIGHT_SHIFTER_SOLENOID_CHANNEL = 0;
+            public static final int LEFT_SHIFTER_SOLENOID_CHANNEL = 2;
+            public static final int RIGHT_SHIFTER_SOLENOID_CHANNEL = 1;
 
             public static final GearRatioHelper SLOW_GEAR_RATIO = new GearRatioHelper(1, 1);
 
@@ -88,11 +88,11 @@ public final class Constants {
         public static final class POWER_DISTRIBUTION_HUB {}
 
         public static final class ARM {
-            public static final int DISTAL_NEO_CAN_ID = 0;
+            public static final int DISTAL_NEO_CAN_ID = 8;
 
-            public static final int LOCAL_NEO_A_CAN_ID = 0;
+            public static final int LOCAL_NEO_A_CAN_ID = 9;
 
-            public static final int LOCAL_NEO_B_CAN_ID = 0;
+            public static final int LOCAL_NEO_B_CAN_ID = 10;
 
             public static final int DISTAL_POTENTIOMETER_ANALOG_CHANNEL = 1;
 
