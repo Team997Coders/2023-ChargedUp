@@ -109,6 +109,8 @@ public class Drivetrain implements Subsystem {
         frontRightSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.FRONT_RIGHT_IS_INVERTED);
         backLeftSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.BACK_LEFT_IS_INVERTED);
         backRightSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.BACK_RIGHT_IS_INVERTED);
+
+        setShifters(shiftersInSlow);
     }
 
     public void setRightVoltages(double voltage) {
@@ -247,19 +249,21 @@ public class Drivetrain implements Subsystem {
         frontRightTemperatureLogger.update(frontRightSparkMax.getMotorTemperature());
         backLeftTemperatureLogger.update(backLeftSparkMax.getMotorTemperature());
         backRightTemperatureLogger.update(backRightSparkMax.getMotorTemperature());
+
         frontRightCurrentLogger.update(frontRightSparkMax.getOutputCurrent());
         backRightCurrentLogger.update(backRightSparkMax.getOutputCurrent());
         frontLeftCurrentLogger.update(frontLeftSparkMax.getOutputCurrent());
         backLeftCurrentLogger.update(backLeftSparkMax.getOutputCurrent());
+
         rightPositionLogger.update(getRightSensorPosition());
         leftPositionLogger.update(getLeftSensorPosition());
+
         rightVelocityLogger.update(rightVelocityFilter.calculate(getRightSensorPosition()));
         leftVelocityLogger.update(leftVelocityFilter.calculate(getLeftSensorPosition()));
+
         rightAccelerationLogger.update(
-                rightAccelerationFilter.calculate(
-                        rightVelocityFilter.calculate(getRightSensorPosition())));
+                rightAccelerationFilter.calculate(rightVelocityFilter.getCurrentOutput()));
         leftAccelerationLogger.update(
-                leftAccelerationFilter.calculate(
-                        leftVelocityFilter.calculate(getLeftSensorPosition())));
+                leftAccelerationFilter.calculate(leftVelocityFilter.getCurrentOutput()));
     }
 }

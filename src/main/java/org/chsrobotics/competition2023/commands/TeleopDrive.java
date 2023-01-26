@@ -17,48 +17,84 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.commands;
 
 import edu.wpi.first.math.controller.DifferentialDriveAccelerationLimiter;
-import edu.wpi.first.math.controller.DifferentialDriveFeedforward;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import java.util.function.DoubleSupplier;
+import java.util.Map;
 import org.chsrobotics.competition2023.Config;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
+import org.chsrobotics.lib.drive.differential.ArcadeDrive;
+import org.chsrobotics.lib.drive.differential.CurvatureDrive;
 import org.chsrobotics.lib.drive.differential.DifferentialDriveMode;
+import org.chsrobotics.lib.drive.differential.MixedDrive;
+import org.chsrobotics.lib.input.JoystickAxis;
+import org.chsrobotics.lib.input.JoystickButton;
 
 public class TeleopDrive extends CommandBase {
     private final Drivetrain drivetrain;
-    private final DoubleSupplier linear;
-    private final DoubleSupplier rotational;
-    private DifferentialDriveMode mode;
-    private final DifferentialDriveFeedforward feedforward =
-            new DifferentialDriveFeedforward(
-                    Constants.COMMAND.TELEOP_DRIVE.FEEDFORWARD_KVLINEAR,
-                    Constants.COMMAND.TELEOP_DRIVE.FEEDFORWARD_KALINEAR,
-                    Constants.COMMAND.TELEOP_DRIVE.FEEDFORWARD_KVANGULAR,
-                    Constants.COMMAND.TELEOP_DRIVE.FEEDFORWARD_KAANGULAR,
-                    Constants.COMMAND.TELEOP_DRIVE.FEEDFORWARD_TRACKWIDTH);
+
     private final DifferentialDriveAccelerationLimiter accelerationLimiter =
             new DifferentialDriveAccelerationLimiter(
-                    null,
-                    Constants.COMMAND.TELEOP_DRIVE.ACCELERATION_LIMITER_TRACKWIDTH,
+                    Constants.SUBSYSTEM.DRIVETRAIN.DRIVETRAIN_PLANT,
+                    Constants.SUBSYSTEM.DRIVETRAIN.TRACKWIDTH_METERS,
                     Constants.COMMAND.TELEOP_DRIVE.ACCELERATION_LIMITER_MAX_LINEAR_ACCEL,
                     Constants.COMMAND.TELEOP_DRIVE.ACCELERATION_LIMITER_MAX_ANGULAR_ACCEL);
 
-    public TeleopDrive(Drivetrain drivetrain, DoubleSupplier linear, DoubleSupplier rotational) {
+    private final JoystickAxis axisA;
+    private final JoystickAxis axisB;
+
+    private final JoystickButton shiftButton;
+
+    public TeleopDrive(
+            Drivetrain drivetrain,
+            JoystickAxis axisA,
+            JoystickAxis axisB,
+            JoystickButton shiftButton) {
+        addRequirements(drivetrain);
         this.drivetrain = drivetrain;
-        this.linear = linear;
-        this.rotational = rotational;
+
+        this.axisA = axisA;
+        this.axisB = axisB;
+
+        this.shiftButton = shiftButton;
     }
 
     @Override
     public void execute() {
-        mode = Config.TELEOP_DRIVE_MODES.MODE_CHOOSER.getSelected();
+        drivetrain.setShifters(!shiftButton.getAsBoolean());
+
+        DifferentialDriveMode mode;
+
+        double linMod = Config.TELEOP_DRIVE_MODES.LINEAR_MODIFIER_CHOOSER.getSelected().value;
+        double angMod = Config.TELEOP_DRIVE_MODES.ANGULAR_MODIFIER_CHOOSER.getSelected().value;
+
+        double linLimit = Config.TELEOP_DRIVE_MODES.LINEAR_RAMP_RATE_CHOOSER.getSelected().value;
+        double angLimit = Config.TELEOP_DRIVE_MODES.ANGULAR_RAMP_RATE_CHOOSER.getSelected().value;
+
+        var arcade = new ArcadeDrive(axisA, axisB, linMod, angMod, linLimit, angLimit);
+        var curvature = new CurvatureDrive(axisA, axisB, linMod, angMod, linLimit, angLimit, false);
+
+        switch (Config.TELEOP_DRIVE_MODES.MODE_CHOOSER.getSelected()) {
+            case ARCADE:
+                mode = arcade;
+            case CURVATURE:
+                mode = curvature;
+            case ARCADE_CURVATURE_MIX_EVEN:
+                mode = new MixedDrive(Map.of(arcade, 0.5, curvature, 0.5));
+            case ARCADE_CURVATURE_MIX_BIAS_ARCADE:
+                mode = new MixedDrive(Map.of(arcade, 0.75, curvature, 0.25));
+            case ARCADE_CURVATURE_MIX_BIAS_CURVATURE:
+                mode = new MixedDrive(Map.of(arcade, 0.25, curvature, 0.75));
+            default:
+                mode = arcade;
+        }
+
         var voltages =
                 accelerationLimiter.calculate(
                         drivetrain.getLeftSideVelocity(),
                         drivetrain.getRightSideVelocity(),
-                        (mode.execute().right) * 12,
-                        (mode.execute().right) * 12);
+                        (mode.execute().right) * Constants.GLOBAL.GLOBAL_NOMINAL_VOLTAGE_VOLTS,
+                        (mode.execute().right) * Constants.GLOBAL.GLOBAL_NOMINAL_VOLTAGE_VOLTS);
+
         drivetrain.setRightVoltages(voltages.left);
         drivetrain.setLeftVoltages(voltages.right);
     }
