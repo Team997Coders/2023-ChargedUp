@@ -17,7 +17,6 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023;
 
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
@@ -32,13 +31,12 @@ public class Simulation {
 
     private final DifferentialDrivetrainSim drivetrainSim =
             new DifferentialDrivetrainSim(
-                    LinearSystemId.identifyDrivetrainSystem(
-                            1, 1, 1, 1, 1), // drivetrain plant model
-                    DCMotor.getFalcon500(2),
-                    1, // gearing
-                    1, // trackwidth
-                    1, // wheel radius
-                    null); // measurement stddevs
+                    Constants.SUBSYSTEM.DRIVETRAIN.DRIVETRAIN_PLANT,
+                    DCMotor.getNEO(2),
+                    1,
+                    1,
+                    1,
+                    null);
 
     private final DifferentiatingFilter drivetrainAccelerationFilter = new DifferentiatingFilter();
 

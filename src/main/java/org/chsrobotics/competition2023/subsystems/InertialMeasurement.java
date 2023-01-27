@@ -23,6 +23,8 @@ import org.chsrobotics.lib.telemetry.HighLevelLogger;
 public class InertialMeasurement implements Subsystem {
     private static final InertialMeasurement instance = new InertialMeasurement();
 
+    private double simYaw = 0;
+
     private InertialMeasurement() {
         register();
     }
@@ -34,11 +36,20 @@ public class InertialMeasurement implements Subsystem {
     public void setSimState(
             double pitch, double yaw, double roll, double xAccel, double yAccel, double zAccel) {
         if (!Robot.isReal()) {
+            simYaw = yaw;
         } else {
             HighLevelLogger.getInstance()
                     .logWarning("Sim state should not be set on a real robot!");
             HighLevelLogger.getInstance()
                     .logWarning("There might be sim code still running somewhere!");
+        }
+    }
+
+    public double getYawRadians() { // dummy method until proper impl
+        if (Robot.isReal()) {
+            return 0;
+        } else {
+            return simYaw;
         }
     }
 }

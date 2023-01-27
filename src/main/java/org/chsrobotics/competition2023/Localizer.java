@@ -66,14 +66,14 @@ public class Localizer {
                 new Double[] {
                     getEstimatedPose().getX(),
                     getEstimatedPose().getY(),
-                    getEstimatedPose().getRotation().getRotations()
+                    getEstimatedPose().getRotation().getRadians()
                 });
 
         poseEstimator.updateWithTime(
                 Units.millisecondsToSeconds(System.currentTimeMillis()),
-                new Rotation2d(0), // imu yaw
-                0, // drivetrain left encoder meters
-                0); // drivetrain right encoder meters
+                new Rotation2d(InertialMeasurement.getInstance().getYawRadians()),
+                Drivetrain.getInstance().getLeftSensorPosition(),
+                Drivetrain.getInstance().getRightSensorPosition());
 
         if (vision.getCurrentPose2dEstimate() != null) {
             var estimate = vision.getCurrentPose2dEstimate();
@@ -83,9 +83,9 @@ public class Localizer {
 
     public void setPose(Pose2d newPose) {
         poseEstimator.resetPosition(
-                new Rotation2d(0), // IMU yaw
-                0, // drivetrain right encoder meters
-                0, // drivetrain left encoder meters
+                new Rotation2d(InertialMeasurement.getInstance().getYawRadians()),
+                Drivetrain.getInstance().getLeftSensorPosition(),
+                Drivetrain.getInstance().getRightSensorPosition(),
                 newPose);
     }
 

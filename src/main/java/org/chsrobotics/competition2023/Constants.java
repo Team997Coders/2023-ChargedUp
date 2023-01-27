@@ -22,7 +22,9 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
+import edu.wpi.first.math.numbers.N2;
+import edu.wpi.first.math.system.LinearSystem;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import java.util.List;
 import org.chsrobotics.lib.util.GearRatioHelper;
 import org.photonvision.RobotPoseEstimator.PoseStrategy;
@@ -62,7 +64,10 @@ public final class Constants {
 
             public static final double WHEEL_RADIUS_METERS = 0;
 
-            public static final double TRACK_WIDTH_METERS = 0.0;
+            public static final double TRACKWIDTH_METERS = 1;
+
+            public static final LinearSystem<N2, N2, N2> DRIVETRAIN_PLANT =
+                    LinearSystemId.identifyDrivetrainSystem(0, 0, 0, 0, TRACKWIDTH_METERS);
         }
 
         public static final class VISION {
@@ -148,9 +153,6 @@ public final class Constants {
             public static final double FEED_FORWARD_ANGULAR_KV = 1.0;
             public static final double FEED_FORWARD_ANGULAR_KA = 1.0;
             public static final double KP_DRIVE_VEL = 1.0;
-            public static final DifferentialDriveKinematics K_DRIVE_KINEMATICS =
-                    new DifferentialDriveKinematics(
-                            Constants.SUBSYSTEM.DRIVETRAIN.TRACK_WIDTH_METERS);
             public static final double K_MAX_SPEED_METERS_PER_SECOND = 1.0;
             public static final double K_MAX_ACCELERATION_METERS_PER_SECOND_SQUARED = 1.0;
             public static final double K_RAMSETE_B = 1.0;
@@ -158,15 +160,8 @@ public final class Constants {
         }
 
         public static final class TELEOP_DRIVE {
-            public static final double ACCELERATION_LIMITER_TRACKWIDTH = 0;
             public static final double ACCELERATION_LIMITER_MAX_LINEAR_ACCEL = 0;
             public static final double ACCELERATION_LIMITER_MAX_ANGULAR_ACCEL = 0;
-
-            public static final double FEEDFORWARD_KVLINEAR = 0;
-            public static final double FEEDFORWARD_KALINEAR = 0;
-            public static final double FEEDFORWARD_KVANGULAR = 0;
-            public static final double FEEDFORWARD_KAANGULAR = 0;
-            public static final double FEEDFORWARD_TRACKWIDTH = 0;
         }
     }
 }

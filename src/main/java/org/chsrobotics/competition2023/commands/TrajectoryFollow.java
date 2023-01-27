@@ -103,7 +103,7 @@ public class TrajectoryFollow extends CommandBase {
         chassisspeedLinearVLogger.update(chassisSpeed.vxMetersPerSecond);
 
         DifferentialDriveWheelSpeeds wheelSpeeds =
-                new DifferentialDriveKinematics(Constants.SUBSYSTEM.DRIVETRAIN.TRACK_WIDTH_METERS)
+                new DifferentialDriveKinematics(Constants.SUBSYSTEM.DRIVETRAIN.TRACKWIDTH_METERS)
                         .toWheelSpeeds(chassisSpeed);
 
         wheelSpeedsLeftSetpointVLogger.update(wheelSpeeds.leftMetersPerSecond);

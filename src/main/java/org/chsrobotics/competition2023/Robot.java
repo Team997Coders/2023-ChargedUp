@@ -82,6 +82,8 @@ public class Robot extends SRobot {
 
             DriverStation.startDataLog(HighLevelLogger.getInstance().getLog(), true);
 
+            Config.publishChoosers();
+
             uptimer.reset();
             uptimer.start();
 

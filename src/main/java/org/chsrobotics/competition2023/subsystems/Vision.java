@@ -57,7 +57,7 @@ public class Vision implements Subsystem {
             new SimVisionSystem(
                     VISION.AT_CAMERA_A_NAME,
                     VISION.AT_CAMERAS_DIAG_FOV_DEGREES,
-                    VISION.ROBOT_TO_AT_CAMERA_A.inverse(), // TODO: check for photonvision 2023
+                    VISION.ROBOT_TO_AT_CAMERA_A,
                     9970,
                     VISION.AT_CAMERAS_HORIZONTAL_RESOLUTION_PX,
                     VISION.AT_CAMERAS_VERTICAL_RESOLUTION_PX,
