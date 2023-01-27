@@ -16,9 +16,8 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023.subsystems;
 
-import edu.wpi.first.apriltag.AprilTag;
-import edu.wpi.first.math.Pair;
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -28,11 +27,11 @@ import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.Constants.SUBSYSTEM.VISION;
 import org.chsrobotics.competition2023.Localizer;
 import org.chsrobotics.lib.telemetry.Logger;
+import org.chsrobotics.lib.util.Tuple2;
+import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
-import org.photonvision.RobotPoseEstimator;
-import org.photonvision.RobotPoseEstimator.PoseStrategy;
+import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.SimVisionSystem;
-import org.photonvision.SimVisionTarget;
 import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
 
@@ -43,21 +42,17 @@ public class Vision implements Subsystem {
 
     private final PhotonCamera cameraB = new PhotonCamera(VISION.AT_CAMERA_B_NAME);
 
-    private final RobotPoseEstimator poseSolver =
-            new RobotPoseEstimator(
-                    Constants.GLOBAL.TAG_LAYOUT,
-                    VISION.DEFAULT_POSE_STRATEGY,
-                    List.of(
-                            Pair.of(cameraA, VISION.ROBOT_TO_AT_CAMERA_A),
-                            Pair.of(cameraB, VISION.ROBOT_TO_AT_CAMERA_B)));
+    private final PhotonPoseEstimator camAEstimator;
+    private final PhotonPoseEstimator camBEstimator;
 
-    private Pair<Pose3d, Double> estimatedPose = Pair.of(new Pose3d(), 0.0);
+    private EstimatedRobotPose camAEstimatedPose = new EstimatedRobotPose(new Pose3d(), 0);
+    private EstimatedRobotPose camBEstimatedPose = new EstimatedRobotPose(new Pose3d(), 0);
 
     private final SimVisionSystem simCameraA =
             new SimVisionSystem(
                     VISION.AT_CAMERA_A_NAME,
                     VISION.AT_CAMERAS_DIAG_FOV_DEGREES,
-                    VISION.ROBOT_TO_AT_CAMERA_A.inverse(), // TODO: check for photonvision 2023
+                    VISION.ROBOT_TO_AT_CAMERA_A,
                     9970,
                     VISION.AT_CAMERAS_HORIZONTAL_RESOLUTION_PX,
                     VISION.AT_CAMERAS_VERTICAL_RESOLUTION_PX,
@@ -67,13 +62,11 @@ public class Vision implements Subsystem {
             new SimVisionSystem(
                     VISION.AT_CAMERA_B_NAME,
                     VISION.AT_CAMERAS_DIAG_FOV_DEGREES,
-                    VISION.ROBOT_TO_AT_CAMERA_B.inverse(),
+                    VISION.ROBOT_TO_AT_CAMERA_B,
                     9970,
                     VISION.AT_CAMERAS_HORIZONTAL_RESOLUTION_PX,
                     VISION.AT_CAMERAS_VERTICAL_RESOLUTION_PX,
                     VISION.AT_CAMERAS_SIMULATION_MIN_TARGET_AREA);
-
-    private final List<SimVisionTarget> simTargets = new ArrayList<>();
 
     private Pose3d simPose = new Pose3d();
 
@@ -107,25 +100,40 @@ public class Vision implements Subsystem {
     private final Logger<Integer> bSetPipelineLogger =
             new Logger<>("cameraBSetPipelineIndex", subdirString);
 
-    private final Logger<Pose3d> estimatedPoseLogger =
-            new Logger<>("estimatedPoseMeters", subdirString);
+    private final Logger<Double[]> camAEstimatedPoseLogger =
+            new Logger<>("camAEstimatedPose_m_m_rad", subdirString);
 
-    private final Logger<PoseStrategy> poseStrategyLogger =
-            new Logger<>("poseStrategy", subdirString);
+    private final Logger<Double[]> camBEstimatedPoseLogger =
+            new Logger<>("camBEstimatedPose_m_m_rad", subdirString);
 
     private Vision() {
         register();
 
-        ArrayList<AprilTag> tags = new ArrayList<>(Constants.GLOBAL.TAG_LAYOUT.getTags());
-
-        for (AprilTag tag : tags) {
-            simTargets.add(
-                    new SimVisionTarget(
-                            tag.pose,
-                            Constants.GLOBAL.APRILTAG_WIDTH_METERS,
-                            Constants.GLOBAL.APRILTAG_HEIGHT_METERS,
-                            tag.ID));
+        AprilTagFieldLayout layout;
+        try {
+            layout =
+                    AprilTagFieldLayout.loadFromResource(
+                            AprilTagFields.kDefaultField.m_resourceFile);
+        } catch (Exception e) {
+            layout = new AprilTagFieldLayout(List.of(), 1, 1);
         }
+
+        simCameraA.addVisionTargets(layout);
+        simCameraB.addVisionTargets(layout);
+
+        camAEstimator =
+                new PhotonPoseEstimator(
+                        layout,
+                        Constants.SUBSYSTEM.VISION.DEFAULT_POSE_STRATEGY,
+                        cameraA,
+                        Constants.SUBSYSTEM.VISION.ROBOT_TO_AT_CAMERA_A);
+
+        camBEstimator =
+                new PhotonPoseEstimator(
+                        layout,
+                        Constants.SUBSYSTEM.VISION.DEFAULT_POSE_STRATEGY,
+                        cameraB,
+                        Constants.SUBSYSTEM.VISION.ROBOT_TO_AT_CAMERA_B);
     }
 
     public static Vision getInstance() {
@@ -156,39 +164,38 @@ public class Vision implements Subsystem {
         cameraB.setPipelineIndex(index);
     }
 
-    public PoseStrategy getPoseSolverStrategy() {
-        return poseSolver.getStrategy();
-    }
-
-    public void setPoseSolverStrategy(PoseStrategy strategy) {
-        poseSolver.setStrategy(strategy);
-    }
-
-    public Pair<Pose2d, Double> getCurrentPose2dEstimate() {
-        if (estimatedPose == null || estimatedPose.getFirst() == null) return null;
-
-        Pose2d asPose2d = estimatedPose.getFirst().toPose2d();
-        double timestamp =
-                Units.millisecondsToSeconds(System.currentTimeMillis())
-                        - getCameraAPipelineLatencySeconds();
-
-        return Pair.of(asPose2d, timestamp);
+    public Tuple2<EstimatedRobotPose> getCurrentPoseEstimates() {
+        return Tuple2.of(camAEstimatedPose, camBEstimatedPose);
     }
 
     @Override
     public void periodic() {
-        poseSolver.setReferencePose(Localizer.getInstance().getEstimatedPose());
+        camAEstimator.setReferencePose(Localizer.getInstance().getEstimatedPose());
+        camBEstimator.setReferencePose(Localizer.getInstance().getEstimatedPose());
 
-        var temp = poseSolver.update();
+        var camAEstimate = camAEstimator.update();
+        var camBEstimate = camBEstimator.update();
 
-        if (temp.isPresent()) estimatedPose = temp.get();
-        else estimatedPose = null;
+        if (camAEstimate.isPresent()) {
+            camAEstimatedPose = camAEstimate.get();
 
-        if (estimatedPose != null) {
-            if (estimatedPose.getFirst() != null) {
-                estimatedPoseLogger.update(estimatedPose.getFirst());
-            }
-        }
+            camAEstimatedPoseLogger.update(
+                    new Double[] {
+                        camAEstimatedPose.estimatedPose.getX(),
+                        camAEstimatedPose.estimatedPose.getY(),
+                        camAEstimatedPose.estimatedPose.toPose2d().getRotation().getRadians()
+                    });
+        } else camAEstimatedPose = null;
+
+        if (camBEstimate.isPresent()) {
+            camBEstimatedPose = camBEstimate.get();
+            camBEstimatedPoseLogger.update(
+                    new Double[] {
+                        camBEstimatedPose.estimatedPose.getX(),
+                        camBEstimatedPose.estimatedPose.getY(),
+                        camBEstimatedPose.estimatedPose.toPose2d().getRotation().getRadians()
+                    });
+        } else camBEstimatedPose = null;
 
         var aCornersX = new ArrayList<>();
         var aCornersY = new ArrayList<>();
@@ -222,8 +229,6 @@ public class Vision implements Subsystem {
 
         aSetPipelineLogger.update(cameraA.getPipelineIndex());
         bSetPipelineLogger.update(cameraB.getPipelineIndex());
-
-        poseStrategyLogger.update(poseSolver.getStrategy());
     }
 
     @Override

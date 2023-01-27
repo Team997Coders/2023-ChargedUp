@@ -67,9 +67,18 @@ public class Localizer {
                 0, // drivetrain left encoder meters
                 0); // drivetrain right encoder meters
 
-        if (vision.getCurrentPose2dEstimate() != null) {
-            var estimate = vision.getCurrentPose2dEstimate();
-            poseEstimator.addVisionMeasurement(estimate.getFirst(), estimate.getSecond());
+        if (vision.getCurrentPoseEstimates() != null) {
+            var estimates = vision.getCurrentPoseEstimates();
+            if (estimates.firstValue() != null) {
+                var measurement = estimates.firstValue();
+                poseEstimator.addVisionMeasurement(
+                        measurement.estimatedPose.toPose2d(), measurement.timestampSeconds);
+            }
+            if (estimates.secondValue() != null) {
+                var measurement = estimates.secondValue();
+                poseEstimator.addVisionMeasurement(
+                        measurement.estimatedPose.toPose2d(), measurement.timestampSeconds);
+            }
         }
     }
 
