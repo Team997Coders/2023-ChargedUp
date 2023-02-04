@@ -19,6 +19,7 @@ package org.chsrobotics.competition2023;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import org.chsrobotics.lib.controllers.feedback.PID.PIDConstants;
 import org.chsrobotics.lib.util.GearRatioHelper;
 import org.photonvision.PhotonPoseEstimator;
 
@@ -123,11 +124,50 @@ public final class Constants {
             public static final GearRatioHelper LOCAL_POTENTIOMETER_CONVERSION_HELPER =
                     new GearRatioHelper(1, 1);
 
+            public static final GearRatioHelper LOCAL_NEO_TO_ARM_HELPER =
+                    new GearRatioHelper(1, 200);
+
+            public static final GearRatioHelper DISTAL_NEO_TO_ARM_HELPER =
+                    new GearRatioHelper(1, 100);
+
             public static final boolean DISTAL_NEO_INVERTED = false;
 
             public static final boolean LOCAL_NEO_A_INVERTED = false;
 
             public static final boolean LOCAL_NEO_B_INVERTED = false;
+
+            public static final double LOCAL_COM_POSITION_FROM_ROOT_METERS = 0.5;
+
+            public static final double LOCAL_MASS_KG = 2;
+
+            public static final double LOCAL_LENGTH_METERS = 1;
+
+            public static final double LOCAL_MOMENT_ABOUT_COM = 2;
+
+            public static final double DISTAL_COM_POSITION_FROM_ROOT_METERS = 0.5;
+
+            public static final double DISTAL_MASS_KG = 2;
+
+            public static final double DISTAL_LENGTH_METERS = 1;
+
+            public static final double DISTAL_MOMENT_ABOUT_COM = 2;
+        }
+    }
+
+    public static final class COMMAND {
+        public static final class ARM_SETPOINT {
+            public static final PIDConstants LOCAL_CONTROLLER_CONSTANTS = new PIDConstants(0, 0, 0);
+
+            public static final int LOCAL_CONTROLLER_INTEGRATION_WINDOW = -1;
+
+            public static final PIDConstants DISTAL_CONTROLLER_CONSTANTS =
+                    new PIDConstants(0, 0, 0);
+
+            public static final int DISTAL_CONTROLLER_INTEGRATION_WINDOW = -1;
+        }
+
+        public static final class ARM_CARTESIAN_CONTROL {
+            public static final double MAX_SETPOINT_VELOCITY_METERS_PER_SECOND = 0.5;
         }
     }
 }
