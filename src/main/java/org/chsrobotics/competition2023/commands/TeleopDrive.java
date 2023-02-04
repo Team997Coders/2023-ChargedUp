@@ -43,12 +43,14 @@ public class TeleopDrive extends CommandBase {
     private final JoystickAxis axisB;
 
     private final JoystickButton shiftButton;
+    private final JoystickButton brakeModeButton;
 
     public TeleopDrive(
             Drivetrain drivetrain,
             JoystickAxis axisA,
             JoystickAxis axisB,
-            JoystickButton shiftButton) {
+            JoystickButton shiftButton,
+            JoystickButton brakeModeButton) {
         addRequirements(drivetrain);
         this.drivetrain = drivetrain;
 
@@ -56,11 +58,14 @@ public class TeleopDrive extends CommandBase {
         this.axisB = axisB;
 
         this.shiftButton = shiftButton;
+        this.brakeModeButton = brakeModeButton;
     }
 
     @Override
     public void execute() {
         drivetrain.setShifters(!shiftButton.getAsBoolean());
+
+        drivetrain.setBrakeMode(!brakeModeButton.getAsBoolean());
 
         DifferentialDriveMode mode;
 
@@ -92,7 +97,7 @@ public class TeleopDrive extends CommandBase {
                 accelerationLimiter.calculate(
                         drivetrain.getLeftSideVelocity(),
                         drivetrain.getRightSideVelocity(),
-                        (mode.execute().right) * Constants.GLOBAL.GLOBAL_NOMINAL_VOLTAGE_VOLTS,
+                        (mode.execute().left) * Constants.GLOBAL.GLOBAL_NOMINAL_VOLTAGE_VOLTS,
                         (mode.execute().right) * Constants.GLOBAL.GLOBAL_NOMINAL_VOLTAGE_VOLTS);
 
         drivetrain.setRightVoltages(voltages.left);

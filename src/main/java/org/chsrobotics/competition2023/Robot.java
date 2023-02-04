@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import java.util.List;
+import org.chsrobotics.competition2023.commands.TeleopDrive;
 import org.chsrobotics.competition2023.commands.TrajectoryFollow;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.Grabber;
@@ -33,6 +34,7 @@ import org.chsrobotics.competition2023.subsystems.Intake;
 import org.chsrobotics.competition2023.subsystems.Pneumatics;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
 import org.chsrobotics.competition2023.subsystems.Vision;
+import org.chsrobotics.lib.input.XboxController;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.util.SRobot;
 
@@ -61,6 +63,8 @@ public class Robot extends SRobot {
 
     private static final Timer uptimer = new Timer();
 
+    private static final XboxController controller = new XboxController(0);
+
     private final TrajectoryConfig trajectoryConfig = new TrajectoryConfig(4, 2);
 
     private final Trajectory trajectory =
@@ -86,9 +90,6 @@ public class Robot extends SRobot {
 
             uptimer.reset();
             uptimer.start();
-
-            scheduler.setDefaultCommand(drivetrain, trajectoryFollow);
-
         } else if (to == RobotState.TEST) {
             // test mode
             CommandScheduler.getInstance().cancelAll();
@@ -103,6 +104,14 @@ public class Robot extends SRobot {
                     .logMessage("Total energy use (Joules): " + pdh.getTotalEnergyUsed());
             HighLevelLogger.getInstance().logMessage("Loop cycles: " + cycleCounter);
             HighLevelLogger.getInstance().logMessage("Uptime (s): " + uptimer.get());
+        } else if (to == RobotState.TELEOPERATED) {
+            scheduler.schedule(
+                    new TeleopDrive(
+                            drivetrain,
+                            controller.leftStickVerticalAxis(),
+                            controller.rightStickHorizontalAxis(),
+                            controller.AButton(),
+                            controller.BButton()));
         }
     }
 
