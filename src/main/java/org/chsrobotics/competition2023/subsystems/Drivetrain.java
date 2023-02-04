@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.Robot;
+import org.chsrobotics.competition2023.Simulation;
 import org.chsrobotics.lib.math.UtilityMath;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
@@ -96,24 +97,36 @@ public class Drivetrain implements Subsystem {
 
     private boolean shiftersInSlow = true;
 
+    private double setLeftVoltage = 0;
+    private double setRightVoltage = 0;
+
+    private double simLeftPositionMeters = 0;
+    private double simRightPositionMeters = 0;
+
     private Drivetrain() {
         register();
         frontLeftSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.FRONT_LEFT_IS_INVERTED);
         frontRightSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.FRONT_RIGHT_IS_INVERTED);
         backLeftSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.BACK_LEFT_IS_INVERTED);
         backRightSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.BACK_RIGHT_IS_INVERTED);
+
+        setShifters(shiftersInSlow);
     }
 
     public void setRightVoltages(double voltage) {
         frontRightSparkMax.setVoltage(voltage);
         backRightSparkMax.setVoltage(voltage);
         rightSetVoltageLogger.update(voltage);
+
+        setRightVoltage = voltage;
     }
 
     public void setLeftVoltages(double voltage) {
         frontLeftSparkMax.setVoltage(voltage);
         backLeftSparkMax.setVoltage(voltage);
         leftSetVoltageLogger.update(voltage);
+
+        setLeftVoltage = voltage;
     }
 
     public void setBrakeMode(boolean isCoastMode) {
@@ -155,23 +168,31 @@ public class Drivetrain implements Subsystem {
     }
 
     public double getRightSensorPosition() {
-        double rightSensorAverage =
-                UtilityMath.arithmeticMean(
-                        new double[] {
-                            frontRightSparkMax.getEncoder().getPosition(),
-                            backRightSparkMax.getEncoder().getPosition()
-                        });
-        return metersFromNEORotations(rightSensorAverage);
+        if (Robot.isReal()) {
+            double rightSensorAverage =
+                    UtilityMath.arithmeticMean(
+                            new double[] {
+                                frontRightSparkMax.getEncoder().getPosition(),
+                                backRightSparkMax.getEncoder().getPosition()
+                            });
+            return metersFromNEORotations(rightSensorAverage);
+        } else {
+            return simRightPositionMeters;
+        }
     }
 
     public double getLeftSensorPosition() {
-        double leftSensorAverage =
-                UtilityMath.arithmeticMean(
-                        new double[] {
-                            frontLeftSparkMax.getEncoder().getPosition(),
-                            backLeftSparkMax.getEncoder().getPosition()
-                        });
-        return metersFromNEORotations(leftSensorAverage);
+        if (Robot.isReal()) {
+            double leftSensorAverage =
+                    UtilityMath.arithmeticMean(
+                            new double[] {
+                                frontLeftSparkMax.getEncoder().getPosition(),
+                                backLeftSparkMax.getEncoder().getPosition()
+                            });
+            return metersFromNEORotations(leftSensorAverage);
+        } else {
+            return simLeftPositionMeters;
+        }
     }
 
     private double metersFromNEORotations(double rotations) {
@@ -188,12 +209,30 @@ public class Drivetrain implements Subsystem {
         }
     }
 
+    public double getLeftSideVelocity() {
+        return leftVelocityFilter.getCurrentOutput();
+    }
+
+    public double getRightSideVelocity() {
+        return rightVelocityFilter.getCurrentOutput();
+    }
+
+    public double getLeftSideAcceleration() {
+        return leftAccelerationFilter.getCurrentOutput();
+    }
+
+    public double getRightSideAcceleration() {
+        return rightAccelerationFilter.getCurrentOutput();
+    }
+
     public static Drivetrain getInstance() {
         return instance;
     }
 
     public void setSimState(double leftMeters, double rightMeters) {
         if (!Robot.isReal()) {
+            simLeftPositionMeters = leftMeters;
+            simRightPositionMeters = rightMeters;
         } else {
             HighLevelLogger.getInstance()
                     .logWarning("Sim state should not be set on a real robot!");
@@ -204,23 +243,27 @@ public class Drivetrain implements Subsystem {
 
     @Override
     public void periodic() {
+        Simulation.getInstance().setDrivetrainInputs(setLeftVoltage, setRightVoltage);
+
         frontLeftTemperatureLogger.update(frontLeftSparkMax.getMotorTemperature());
         frontRightTemperatureLogger.update(frontRightSparkMax.getMotorTemperature());
         backLeftTemperatureLogger.update(backLeftSparkMax.getMotorTemperature());
         backRightTemperatureLogger.update(backRightSparkMax.getMotorTemperature());
+
         frontRightCurrentLogger.update(frontRightSparkMax.getOutputCurrent());
         backRightCurrentLogger.update(backRightSparkMax.getOutputCurrent());
         frontLeftCurrentLogger.update(frontLeftSparkMax.getOutputCurrent());
         backLeftCurrentLogger.update(backLeftSparkMax.getOutputCurrent());
+
         rightPositionLogger.update(getRightSensorPosition());
         leftPositionLogger.update(getLeftSensorPosition());
+
         rightVelocityLogger.update(rightVelocityFilter.calculate(getRightSensorPosition()));
         leftVelocityLogger.update(leftVelocityFilter.calculate(getLeftSensorPosition()));
+
         rightAccelerationLogger.update(
-                rightAccelerationFilter.calculate(
-                        rightVelocityFilter.calculate(getRightSensorPosition())));
+                rightAccelerationFilter.calculate(rightVelocityFilter.getCurrentOutput()));
         leftAccelerationLogger.update(
-                leftAccelerationFilter.calculate(
-                        leftVelocityFilter.calculate(getLeftSensorPosition())));
+                leftAccelerationFilter.calculate(leftVelocityFilter.getCurrentOutput()));
     }
 }

@@ -19,6 +19,10 @@ package org.chsrobotics.competition2023;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.numbers.N2;
+import edu.wpi.first.math.system.LinearSystem;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import java.util.List;
 import org.chsrobotics.lib.util.GearRatioHelper;
 import org.photonvision.PhotonPoseEstimator;
 
@@ -32,10 +36,10 @@ public final class Constants {
 
     public static final class SUBSYSTEM {
         public static final class DRIVETRAIN {
-            public static final int FRONT_RIGHT_CAN_ID = 0;
-            public static final int BACK_RIGHT_CAN_ID = 0;
-            public static final int FRONT_LEFT_CAN_ID = 0;
-            public static final int BACK_LEFT_CAN_ID = 0;
+            public static final int FRONT_RIGHT_CAN_ID = 2;
+            public static final int BACK_RIGHT_CAN_ID = 4;
+            public static final int FRONT_LEFT_CAN_ID = 1;
+            public static final int BACK_LEFT_CAN_ID = 3;
 
             public static final boolean FRONT_RIGHT_IS_INVERTED = false;
             public static final boolean BACK_RIGHT_IS_INVERTED = false;
@@ -45,14 +49,19 @@ public final class Constants {
             public static final boolean LEFT_SHIFTER_SOLENOID_IS_INVERTED = false;
             public static final boolean RIGHT_SHIFTER_SOLENOID_IS_INVERTED = false;
 
-            public static final int LEFT_SHIFTER_SOLENOID_CHANNEL = 0;
-            public static final int RIGHT_SHIFTER_SOLENOID_CHANNEL = 0;
+            public static final int LEFT_SHIFTER_SOLENOID_CHANNEL = 2;
+            public static final int RIGHT_SHIFTER_SOLENOID_CHANNEL = 1;
 
             public static final GearRatioHelper SLOW_GEAR_RATIO = new GearRatioHelper(1, 1);
 
             public static final GearRatioHelper FAST_GEAR_RATIO = new GearRatioHelper(2, 1);
 
             public static final double WHEEL_RADIUS_METERS = 0;
+
+            public static final double TRACKWIDTH_METERS = 1;
+
+            public static final LinearSystem<N2, N2, N2> DRIVETRAIN_PLANT =
+                    LinearSystemId.identifyDrivetrainSystem(0, 0, 0, 0, TRACKWIDTH_METERS);
         }
 
         public static final class VISION {
@@ -77,11 +86,11 @@ public final class Constants {
         }
 
         public static final class INTAKE {
-            public static final int LEFT_MOTOR_CANID = 0;
-            public static final int RIGHT_MOTOR_CANID = 0;
+            public static final int LEFT_MOTOR_CANID = 11;
+            public static final int RIGHT_MOTOR_CANID = 12;
 
-            public static final int LEFT_DEPLOY_SOLENOID_CHANNEL = 0;
-            public static final int RIGHT_DEPLOY_SOLENOID_CHANNEL = 0;
+            public static final int LEFT_DEPLOY_SOLENOID_CHANNEL = 5;
+            public static final int RIGHT_DEPLOY_SOLENOID_CHANNEL = 6;
 
             public static final boolean LEFT_MOTOR_INVERTED = false;
             public static final boolean RIGHT_MOTOR_INVERTED = false;
@@ -103,11 +112,11 @@ public final class Constants {
         public static final class POWER_DISTRIBUTION_HUB {}
 
         public static final class ARM {
-            public static final int DISTAL_NEO_CAN_ID = 0;
+            public static final int DISTAL_NEO_CAN_ID = 8;
 
-            public static final int LOCAL_NEO_A_CAN_ID = 0;
+            public static final int LOCAL_NEO_A_CAN_ID = 9;
 
-            public static final int LOCAL_NEO_B_CAN_ID = 0;
+            public static final int LOCAL_NEO_B_CAN_ID = 10;
 
             public static final int DISTAL_POTENTIOMETER_ANALOG_CHANNEL = 1;
 
@@ -128,6 +137,25 @@ public final class Constants {
             public static final boolean LOCAL_NEO_A_INVERTED = false;
 
             public static final boolean LOCAL_NEO_B_INVERTED = false;
+        }
+    }
+
+    public static final class COMMAND {
+        public static final class TRAJECTORY_FOLLOWING {
+            public static final double FEED_FORWARD_KV = 1.0;
+            public static final double FEED_FORWARD_KA = 1.0;
+            public static final double FEED_FORWARD_ANGULAR_KV = 1.0;
+            public static final double FEED_FORWARD_ANGULAR_KA = 1.0;
+            public static final double KP_DRIVE_VEL = 1.0;
+            public static final double K_MAX_SPEED_METERS_PER_SECOND = 1.0;
+            public static final double K_MAX_ACCELERATION_METERS_PER_SECOND_SQUARED = 1.0;
+            public static final double K_RAMSETE_B = 1.0;
+            public static final double K_RAMSETE_ZETA = 1.0;
+        }
+
+        public static final class TELEOP_DRIVE {
+            public static final double ACCELERATION_LIMITER_MAX_LINEAR_ACCEL = 0;
+            public static final double ACCELERATION_LIMITER_MAX_ANGULAR_ACCEL = 0;
         }
     }
 }

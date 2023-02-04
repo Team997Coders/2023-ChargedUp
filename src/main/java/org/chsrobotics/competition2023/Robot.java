@@ -16,9 +16,16 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import java.util.List;
+import org.chsrobotics.competition2023.commands.TrajectoryFollow;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.Grabber;
 import org.chsrobotics.competition2023.subsystems.InertialMeasurement;
@@ -54,11 +61,19 @@ public class Robot extends SRobot {
 
     private static final Timer uptimer = new Timer();
 
+    private final TrajectoryConfig trajectoryConfig = new TrajectoryConfig(4, 2);
+
+    private final Trajectory trajectory =
+            TrajectoryGenerator.generateTrajectory(
+                    List.of(new Pose2d(0, 0, new Rotation2d()), new Pose2d(4, 4, new Rotation2d())),
+                    trajectoryConfig);
+    private final TrajectoryFollow trajectoryFollow =
+            new TrajectoryFollow(drivetrain, trajectory, true);
+
     @Override
     public void stateTransition(RobotState from, RobotState to) {
         if (from == RobotState.NONE && to == RobotState.DISABLED) {
             // robot initialization
-
             HighLevelLogger.getInstance().startLogging();
             HighLevelLogger.getInstance().logMessage("*******ROBOT STARTUP*******");
             HighLevelLogger.getInstance().logMessage("997 Competition Robot 2023");
@@ -67,8 +82,12 @@ public class Robot extends SRobot {
 
             DriverStation.startDataLog(HighLevelLogger.getInstance().getLog(), true);
 
+            Config.publishChoosers();
+
             uptimer.reset();
             uptimer.start();
+
+            scheduler.setDefaultCommand(drivetrain, trajectoryFollow);
 
         } else if (to == RobotState.TEST) {
             // test mode
