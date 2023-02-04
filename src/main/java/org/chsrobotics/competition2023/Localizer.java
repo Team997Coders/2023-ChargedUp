@@ -41,11 +41,7 @@ public class Localizer {
 
     private final DifferentialDrivePoseEstimator poseEstimator =
             new DifferentialDrivePoseEstimator(
-                    new DifferentialDriveKinematics(1), // drivetrain trackwidth
-                    new Rotation2d(),
-                    0,
-                    0,
-                    new Pose2d());
+                    new DifferentialDriveKinematics(1), new Rotation2d(), 0, 0, new Pose2d());
 
     private final String subdirString = "localizer";
 
@@ -74,7 +70,7 @@ public class Localizer {
                 new Rotation2d(InertialMeasurement.getInstance().getYawRadians()),
                 Drivetrain.getInstance().getLeftSensorPosition(),
                 Drivetrain.getInstance().getRightSensorPosition());
-
+                
         if (vision.getCurrentPoseEstimates() != null) {
             var estimates = vision.getCurrentPoseEstimates();
             if (estimates.firstValue() != null) {
