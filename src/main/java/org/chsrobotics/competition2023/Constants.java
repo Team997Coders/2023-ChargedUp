@@ -22,7 +22,6 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.plant.LinearSystemId;
-import java.util.List;
 import org.chsrobotics.lib.util.GearRatioHelper;
 import org.photonvision.PhotonPoseEstimator;
 
@@ -61,7 +60,7 @@ public final class Constants {
             public static final double TRACKWIDTH_METERS = 1;
 
             public static final LinearSystem<N2, N2, N2> DRIVETRAIN_PLANT =
-                    LinearSystemId.identifyDrivetrainSystem(0, 0, 0, 0, TRACKWIDTH_METERS);
+                    LinearSystemId.identifyDrivetrainSystem(1, 1, 1, 1, TRACKWIDTH_METERS);
         }
 
         public static final class VISION {

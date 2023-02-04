@@ -70,7 +70,7 @@ public class Localizer {
                 new Rotation2d(InertialMeasurement.getInstance().getYawRadians()),
                 Drivetrain.getInstance().getLeftSensorPosition(),
                 Drivetrain.getInstance().getRightSensorPosition());
-                
+
         if (vision.getCurrentPoseEstimates() != null) {
             var estimates = vision.getCurrentPoseEstimates();
             if (estimates.firstValue() != null) {
