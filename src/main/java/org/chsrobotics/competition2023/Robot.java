@@ -23,7 +23,6 @@ import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import java.util.List;
 import org.chsrobotics.competition2023.commands.TeleopDrive;
@@ -35,6 +34,7 @@ import org.chsrobotics.competition2023.subsystems.Intake;
 import org.chsrobotics.competition2023.subsystems.Pneumatics;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
 import org.chsrobotics.competition2023.subsystems.Vision;
+import org.chsrobotics.lib.input.XboxController;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.util.SRobot;
 
@@ -108,10 +108,10 @@ public class Robot extends SRobot {
             scheduler.schedule(
                     new TeleopDrive(
                             drivetrain,
-                            controller::getLeftY,
-                            controller::getRightX,
-                            controller::getAButton,
-                            controller::getBButton));
+                            controller.leftStickVerticalAxis(),
+                            controller.rightStickHorizontalAxis(),
+                            controller.AButton(),
+                            controller.BButton()));
         }
     }
 
