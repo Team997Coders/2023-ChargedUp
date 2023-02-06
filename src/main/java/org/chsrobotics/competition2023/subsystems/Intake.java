@@ -17,7 +17,6 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.subsystems;
 
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
@@ -33,12 +32,9 @@ public class Intake implements Subsystem {
     private final CANSparkMax rightMotor =
             new CANSparkMax(Constants.SUBSYSTEM.INTAKE.RIGHT_MOTOR_CANID, MotorType.kBrushless);
 
-    private final Solenoid leftDeploySolenoid =
+    private final Solenoid deploySolenoid =
             Pneumatics.getInstance()
-                    .getSolenoid(Constants.SUBSYSTEM.INTAKE.LEFT_DEPLOY_SOLENOID_CHANNEL);
-    private final Solenoid rightDeploySolenoid =
-            Pneumatics.getInstance()
-                    .getSolenoid(Constants.SUBSYSTEM.INTAKE.RIGHT_DEPLOY_SOLENOID_CHANNEL);
+                    .getSolenoid(Constants.SUBSYSTEM.INTAKE.DEPLOY_SOLENOID_CHANNEL);
 
     private final Timer timeBuffer = new Timer();
 
@@ -77,8 +73,8 @@ public class Intake implements Subsystem {
         leftMotor.setInverted(Constants.SUBSYSTEM.INTAKE.LEFT_MOTOR_INVERTED);
         rightMotor.setInverted(Constants.SUBSYSTEM.INTAKE.RIGHT_MOTOR_INVERTED);
 
-        leftMotor.setIdleMode(IdleMode.kCoast);
-        rightMotor.setIdleMode(IdleMode.kCoast);
+        leftMotor.setIdleMode(Constants.SUBSYSTEM.INTAKE.IDLE_MODE);
+        rightMotor.setIdleMode(Constants.SUBSYSTEM.INTAKE.IDLE_MODE);
 
         timeBuffer.reset();
         timeBuffer.stop();
@@ -107,13 +103,11 @@ public class Intake implements Subsystem {
 
     private void setSolenoids(boolean deployed) {
         if (deployed) {
-            rightDeploySolenoid.set(!Constants.SUBSYSTEM.INTAKE.RIGHT_DEPLOY_SOLENOID_INVERTED);
-            leftDeploySolenoid.set(!Constants.SUBSYSTEM.INTAKE.LEFT_DEPLOY_SOLENOID_INVERTED);
+            deploySolenoid.set(!Constants.SUBSYSTEM.INTAKE.DEPLOY_SOLENOID_INVERTED);
 
             deployedLogger.update(true);
         } else {
-            rightDeploySolenoid.set(Constants.SUBSYSTEM.INTAKE.RIGHT_DEPLOY_SOLENOID_INVERTED);
-            leftDeploySolenoid.set(Constants.SUBSYSTEM.INTAKE.LEFT_DEPLOY_SOLENOID_INVERTED);
+            deploySolenoid.set(Constants.SUBSYSTEM.INTAKE.DEPLOY_SOLENOID_INVERTED);
 
             deployedLogger.update(false);
         }

@@ -32,12 +32,19 @@ import org.chsrobotics.lib.input.JoystickButton;
 public class TeleopDrive extends CommandBase {
     private final Drivetrain drivetrain;
 
-    private final DifferentialDriveAccelerationLimiter accelerationLimiter =
+    private final DifferentialDriveAccelerationLimiter fastAccelerationLimiter =
             new DifferentialDriveAccelerationLimiter(
-                    Constants.SUBSYSTEM.DRIVETRAIN.DRIVETRAIN_PLANT,
+                    Constants.SUBSYSTEM.DRIVETRAIN.FAST_DRIVETRAIN_PLANT,
                     Constants.SUBSYSTEM.DRIVETRAIN.TRACKWIDTH_METERS,
-                    Constants.COMMAND.TELEOP_DRIVE.ACCELERATION_LIMITER_MAX_LINEAR_ACCEL,
-                    Constants.COMMAND.TELEOP_DRIVE.ACCELERATION_LIMITER_MAX_ANGULAR_ACCEL);
+                    Constants.COMMAND.TELEOP_DRIVE.FAST_MAX_LINEAR_ACCEL_M_P_SEC_SQUARED,
+                    Constants.COMMAND.TELEOP_DRIVE.FAST_MAX_ANGULAR_ACCEL_RADS_P_SEC_SQUARED);
+
+    private final DifferentialDriveAccelerationLimiter slowAccelerationLimiter =
+            new DifferentialDriveAccelerationLimiter(
+                    Constants.SUBSYSTEM.DRIVETRAIN.SLOW_DRIVETRAIN_PLANT,
+                    Constants.SUBSYSTEM.DRIVETRAIN.TRACKWIDTH_METERS,
+                    Constants.COMMAND.TELEOP_DRIVE.SLOW_MAX_LINEAR_ACCEL_M_P_SEC_SQUARED,
+                    Constants.COMMAND.TELEOP_DRIVE.SLOW_MAX_ANGULAR_ACCEL_RAD_P_SEC_SQUARED);
 
     private final JoystickAxis axisA;
     private final JoystickAxis axisB;
@@ -93,14 +100,17 @@ public class TeleopDrive extends CommandBase {
                 mode = arcade;
         }
 
+        var limiter =
+                drivetrain.getShifterSlow() ? slowAccelerationLimiter : fastAccelerationLimiter;
+
         var voltages =
-                accelerationLimiter.calculate(
+                limiter.calculate(
                         drivetrain.getLeftSideVelocity(),
                         drivetrain.getRightSideVelocity(),
                         (mode.execute().left) * Constants.GLOBAL.GLOBAL_NOMINAL_VOLTAGE_VOLTS,
                         (mode.execute().right) * Constants.GLOBAL.GLOBAL_NOMINAL_VOLTAGE_VOLTS);
 
-        drivetrain.setRightVoltages(voltages.left);
-        drivetrain.setLeftVoltages(voltages.right);
+        drivetrain.setRightVoltages(voltages.right);
+        drivetrain.setLeftVoltages(voltages.left);
     }
 }
