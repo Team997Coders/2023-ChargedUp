@@ -38,10 +38,8 @@ public class ArmSetpointControl extends CommandBase {
                     Constants.SUBSYSTEM.ARM.LOCAL_COM_POSITION_FROM_ROOT_METERS,
                     Constants.SUBSYSTEM.ARM.LOCAL_MASS_KG,
                     Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
-                    Constants.SUBSYSTEM.ARM.LOCAL_MOMENT_ABOUT_COM,
                     Constants.SUBSYSTEM.ARM.DISTAL_COM_POSITION_FROM_ROOT_METERS,
-                    Constants.SUBSYSTEM.ARM.DISTAL_MASS_KG,
-                    Constants.SUBSYSTEM.ARM.DISTAL_MOMENT_ABOUT_COM);
+                    Constants.SUBSYSTEM.ARM.DISTAL_MASS_KG);
 
     private final PID localController;
     private final PID distalController;
@@ -49,13 +47,13 @@ public class ArmSetpointControl extends CommandBase {
     private final DCMotor localGearbox =
             DCMotor.getNEO(2)
                     .withReduction(
-                            Constants.SUBSYSTEM.ARM.LOCAL_NEO_TO_ARM_HELPER
+                            Constants.SUBSYSTEM.ARM.LOCAL_MOTORS_CONVERSION_HELPER
                                     .toDoubleRatioOutputToInput());
 
     private final DCMotor distalGearbox =
             DCMotor.getNEO(1)
                     .withReduction(
-                            Constants.SUBSYSTEM.ARM.DISTAL_NEO_TO_ARM_HELPER
+                            Constants.SUBSYSTEM.ARM.DISTAL_MOTOR_CONVERSION_HELPER
                                     .toDoubleRatioOutputToInput());
 
     private final String subdirString = "armSetpointControl";
@@ -88,9 +86,6 @@ public class ArmSetpointControl extends CommandBase {
     public void initialize() {
         localController.autoGenerateLogs("localController", subdirString);
         distalController.autoGenerateLogs("distalController", subdirString);
-
-        arm.setLocalIdleMode(false);
-        arm.setDistalIdleMode(false);
     }
 
     @Override
@@ -100,15 +95,13 @@ public class ArmSetpointControl extends CommandBase {
 
         double localWrappedSetpoint =
                 UtilityMath.smallestAngleRadiansBetween(
-                                localAngleRadians.getAsDouble(),
-                                arm.getLocalPotentiometerAngleRadians())
-                        + arm.getLocalPotentiometerAngleRadians();
+                                localAngleRadians.getAsDouble(), arm.getLocalAngleRadians())
+                        + arm.getLocalAngleRadians();
 
         double distalWrappedSetpoint =
                 UtilityMath.smallestAngleRadiansBetween(
-                                distalAngleRadians.getAsDouble(),
-                                arm.getDistalPotentiometerAngleRadians())
-                        + arm.getDistalPotentiometerAngleRadians();
+                                distalAngleRadians.getAsDouble(), arm.getDistalAngleRadians())
+                        + arm.getDistalAngleRadians();
 
         double localFeedbackU = localController.calculate(localWrappedSetpoint);
         double distalFeedbackU = distalController.calculate(distalWrappedSetpoint);

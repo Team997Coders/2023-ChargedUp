@@ -26,6 +26,8 @@ import java.util.List;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.Constants.SUBSYSTEM.VISION;
 import org.chsrobotics.competition2023.Localizer;
+import org.chsrobotics.competition2023.Robot;
+import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.telemetry.Logger;
 import org.chsrobotics.lib.util.Tuple2;
 import org.photonvision.EstimatedRobotPose;
@@ -77,6 +79,12 @@ public class Vision implements Subsystem {
 
     private final Logger<Boolean> bHasTargetsLogger =
             new Logger<>("cameraBHasTargets", subdirString);
+
+    private final Logger<Integer[]> aTrackedTargetIDsLogger =
+            new Logger<>("cameraATracketTargetIDs", subdirString);
+
+    private final Logger<Integer[]> bTrackedTargetIDsLogger =
+            new Logger<>("cameraBTrackedTargetIDs", subdirString);
 
     private final Logger<Double> aLatencyLogger =
             new Logger<>("cameraAPipelineLatency_s", subdirString);
@@ -202,7 +210,11 @@ public class Vision implements Subsystem {
         var bCornersX = new ArrayList<>();
         var bCornersY = new ArrayList<>();
 
+        var aTargetIDs = new ArrayList<>();
+        var bTargetIDs = new ArrayList<>();
+
         for (PhotonTrackedTarget target : cameraA.getLatestResult().targets) {
+            aTargetIDs.add(target.getFiducialId());
             for (TargetCorner corner : target.getDetectedCorners()) {
                 aCornersX.add(corner.x);
                 aCornersY.add(corner.y);
@@ -210,6 +222,7 @@ public class Vision implements Subsystem {
         }
 
         for (PhotonTrackedTarget target : cameraB.getLatestResult().targets) {
+            bTargetIDs.add(target.getFiducialId());
             for (TargetCorner corner : target.getDetectedCorners()) {
                 bCornersX.add(corner.x);
                 bCornersY.add(corner.y);
@@ -220,6 +233,9 @@ public class Vision implements Subsystem {
         aTargetCornersYLogger.update(aCornersY.toArray(new Double[] {}));
         bTargetCornersXLogger.update(bCornersX.toArray(new Double[] {}));
         bTargetCornersYLogger.update(bCornersY.toArray(new Double[] {}));
+
+        aTrackedTargetIDsLogger.update(aTargetIDs.toArray(new Integer[] {}));
+        bTrackedTargetIDsLogger.update(bTargetIDs.toArray(new Integer[] {}));
 
         aLatencyLogger.update(getCameraAPipelineLatencySeconds());
         bLatencyLogger.update(getCameraBPipelineLatencySeconds());
@@ -235,5 +251,16 @@ public class Vision implements Subsystem {
     public void simulationPeriodic() {
         simCameraA.processFrame(simPose);
         simCameraB.processFrame(simPose);
+    }
+
+    public void setSimState(Pose3d simPose) {
+        if (!Robot.isReal()) {
+            this.simPose = simPose;
+        } else {
+            HighLevelLogger.getInstance()
+                    .logWarning("Sim state should not be set on a real robot!");
+            HighLevelLogger.getInstance()
+                    .logWarning("There might be sim code still running somewhere!");
+        }
     }
 }

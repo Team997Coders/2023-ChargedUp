@@ -19,11 +19,12 @@ package org.chsrobotics.competition2023.subsystems;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.Robot;
-import org.chsrobotics.lib.math.UtilityMath;
+import org.chsrobotics.competition2023.Simulation;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.telemetry.Logger;
@@ -41,12 +42,19 @@ public class Drivetrain implements Subsystem {
     private final CANSparkMax backLeftSparkMax =
             new CANSparkMax(Constants.SUBSYSTEM.DRIVETRAIN.BACK_LEFT_CAN_ID, MotorType.kBrushless);
 
-    private final Solenoid leftShifter =
+    private final Encoder leftEncoder =
+            new Encoder(
+                    Constants.SUBSYSTEM.DRIVETRAIN.LEFT_ENCODER_CHANNEL_A,
+                    Constants.SUBSYSTEM.DRIVETRAIN.LEFT_ENCODER_CHANNEL_B);
+
+    private final Encoder rightEncoder =
+            new Encoder(
+                    Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_ENCODER_CHANNEL_A,
+                    Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_ENCODER_CHANNEL_B);
+
+    private final Solenoid shifter =
             Pneumatics.getInstance()
-                    .getSolenoid(Constants.SUBSYSTEM.DRIVETRAIN.LEFT_SHIFTER_SOLENOID_CHANNEL);
-    private final Solenoid rightShifter =
-            Pneumatics.getInstance()
-                    .getSolenoid(Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_SHIFTER_SOLENOID_CHANNEL);
+                    .getSolenoid(Constants.SUBSYSTEM.DRIVETRAIN.SHIFTER_SOLENOID_CHANNEL);
 
     private final DifferentiatingFilter rightVelocityFilter = new DifferentiatingFilter();
     private final DifferentiatingFilter leftVelocityFilter = new DifferentiatingFilter();
@@ -60,7 +68,9 @@ public class Drivetrain implements Subsystem {
             new Logger<>("leftSetVoltage_volts", subdirString);
     private final Logger<Double> rightSetVoltageLogger =
             new Logger<>("rightSetVoltage_volts", subdirString);
+
     private final Logger<Boolean> isCoastModeLogger = new Logger<>("isCoastMode", subdirString);
+
     private final Logger<Double> frontRightTemperatureLogger =
             new Logger<>("frontRightTemperature_C", subdirString);
     private final Logger<Double> frontLeftTemperatureLogger =
@@ -69,22 +79,24 @@ public class Drivetrain implements Subsystem {
             new Logger<>("backRightTemperature_C", subdirString);
     private final Logger<Double> backLeftTemperatureLogger =
             new Logger<>("backLeftTemperature_C", subdirString);
-    private final Logger<Boolean> isLeftShifterOnLogger =
-            new Logger<>("isLeftShifterOn", subdirString);
-    private final Logger<Boolean> isRightShifterOnLogger =
-            new Logger<>("isRightShifterOn", subdirString);
+
+    private final Logger<Boolean> shifterOnLogger = new Logger<>("shifterSlow", subdirString);
+
     private final Logger<Double> rightPositionLogger =
             new Logger<>("rightSensorPosition_meters", subdirString);
     private final Logger<Double> leftPositionLogger =
             new Logger<>("leftSensorPosition_meters", subdirString);
+
     private final Logger<Double> rightVelocityLogger =
             new Logger<>("rightVelocity_mps", subdirString);
     private final Logger<Double> leftVelocityLogger =
             new Logger<>("leftVeloctiy_mps", subdirString);
+
     private final Logger<Double> rightAccelerationLogger =
             new Logger<>("rightAcceleration_mpsSquared", subdirString);
     private final Logger<Double> leftAccelerationLogger =
             new Logger<>("leftAcceleration_mpsSquared", subdirString);
+
     private final Logger<Double> frontRightCurrentLogger =
             new Logger<>("frontRightCurrent_amps", subdirString);
     private final Logger<Double> backRightCurrentLogger =
@@ -96,24 +108,40 @@ public class Drivetrain implements Subsystem {
 
     private boolean shiftersInSlow = true;
 
+    private double setLeftVoltage = 0;
+    private double setRightVoltage = 0;
+
+    private double simLeftPositionMeters = 0;
+    private double simRightPositionMeters = 0;
+
     private Drivetrain() {
         register();
         frontLeftSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.FRONT_LEFT_IS_INVERTED);
         frontRightSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.FRONT_RIGHT_IS_INVERTED);
         backLeftSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.BACK_LEFT_IS_INVERTED);
         backRightSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.BACK_RIGHT_IS_INVERTED);
+
+        setShifters(shiftersInSlow);
+    }
+
+    public static Drivetrain getInstance() {
+        return instance;
     }
 
     public void setRightVoltages(double voltage) {
         frontRightSparkMax.setVoltage(voltage);
         backRightSparkMax.setVoltage(voltage);
         rightSetVoltageLogger.update(voltage);
+
+        setRightVoltage = voltage;
     }
 
     public void setLeftVoltages(double voltage) {
         frontLeftSparkMax.setVoltage(voltage);
         backLeftSparkMax.setVoltage(voltage);
         leftSetVoltageLogger.update(voltage);
+
+        setLeftVoltage = voltage;
     }
 
     public void setBrakeMode(boolean isCoastMode) {
@@ -129,23 +157,13 @@ public class Drivetrain implements Subsystem {
     }
 
     public void setShifters(boolean slow) {
-        if (Constants.SUBSYSTEM.DRIVETRAIN.LEFT_SHIFTER_SOLENOID_IS_INVERTED) {
-            leftShifter.set(!slow);
-            isLeftShifterOnLogger.update(!slow);
+        if (Constants.SUBSYSTEM.DRIVETRAIN.SHIFTER_SOLENOID_INVERTED) {
+            shifter.set(!slow);
+            shifterOnLogger.update(!slow);
             shiftersInSlow = false;
         } else {
-            leftShifter.set(slow);
-            isLeftShifterOnLogger.update(slow);
-            shiftersInSlow = true;
-        }
-
-        if (Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_SHIFTER_SOLENOID_IS_INVERTED) {
-            rightShifter.set(!slow);
-            isRightShifterOnLogger.update(!slow);
-            shiftersInSlow = false;
-        } else {
-            rightShifter.set(slow);
-            isRightShifterOnLogger.update(slow);
+            shifter.set(slow);
+            shifterOnLogger.update(slow);
             shiftersInSlow = true;
         }
     }
@@ -155,45 +173,43 @@ public class Drivetrain implements Subsystem {
     }
 
     public double getRightSensorPosition() {
-        double rightSensorAverage =
-                UtilityMath.arithmeticMean(
-                        new double[] {
-                            frontRightSparkMax.getEncoder().getPosition(),
-                            backRightSparkMax.getEncoder().getPosition()
-                        });
-        return metersFromNEORotations(rightSensorAverage);
-    }
-
-    public double getLeftSensorPosition() {
-        double leftSensorAverage =
-                UtilityMath.arithmeticMean(
-                        new double[] {
-                            frontLeftSparkMax.getEncoder().getPosition(),
-                            backLeftSparkMax.getEncoder().getPosition()
-                        });
-        return metersFromNEORotations(leftSensorAverage);
-    }
-
-    private double metersFromNEORotations(double rotations) {
-        if (getShifterSlow()) {
-            return Constants.SUBSYSTEM.DRIVETRAIN.SLOW_GEAR_RATIO.outputFromInput(rotations)
-                    * 2
-                    * Math.PI
-                    * Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS;
+        if (Robot.isReal()) {
+            return Constants.SUBSYSTEM.DRIVETRAIN.ENCODER_TO_OUTPUT.outputFromInput(
+                    rightEncoder.get());
         } else {
-            return Constants.SUBSYSTEM.DRIVETRAIN.FAST_GEAR_RATIO.outputFromInput(rotations)
-                    * 2
-                    * Math.PI
-                    * Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS;
+            return simRightPositionMeters;
         }
     }
 
-    public static Drivetrain getInstance() {
-        return instance;
+    public double getLeftSensorPosition() {
+        if (Robot.isReal()) {
+            return Constants.SUBSYSTEM.DRIVETRAIN.ENCODER_TO_OUTPUT.outputFromInput(
+                    leftEncoder.get());
+        } else {
+            return simLeftPositionMeters;
+        }
+    }
+
+    public double getLeftSideVelocity() {
+        return leftVelocityFilter.getCurrentOutput();
+    }
+
+    public double getRightSideVelocity() {
+        return rightVelocityFilter.getCurrentOutput();
+    }
+
+    public double getLeftSideAcceleration() {
+        return leftAccelerationFilter.getCurrentOutput();
+    }
+
+    public double getRightSideAcceleration() {
+        return rightAccelerationFilter.getCurrentOutput();
     }
 
     public void setSimState(double leftMeters, double rightMeters) {
         if (!Robot.isReal()) {
+            simLeftPositionMeters = leftMeters;
+            simRightPositionMeters = rightMeters;
         } else {
             HighLevelLogger.getInstance()
                     .logWarning("Sim state should not be set on a real robot!");
@@ -204,23 +220,27 @@ public class Drivetrain implements Subsystem {
 
     @Override
     public void periodic() {
+        Simulation.getInstance().setDrivetrainInputs(setLeftVoltage, setRightVoltage);
+
         frontLeftTemperatureLogger.update(frontLeftSparkMax.getMotorTemperature());
         frontRightTemperatureLogger.update(frontRightSparkMax.getMotorTemperature());
         backLeftTemperatureLogger.update(backLeftSparkMax.getMotorTemperature());
         backRightTemperatureLogger.update(backRightSparkMax.getMotorTemperature());
+
         frontRightCurrentLogger.update(frontRightSparkMax.getOutputCurrent());
         backRightCurrentLogger.update(backRightSparkMax.getOutputCurrent());
         frontLeftCurrentLogger.update(frontLeftSparkMax.getOutputCurrent());
         backLeftCurrentLogger.update(backLeftSparkMax.getOutputCurrent());
+
         rightPositionLogger.update(getRightSensorPosition());
         leftPositionLogger.update(getLeftSensorPosition());
+
         rightVelocityLogger.update(rightVelocityFilter.calculate(getRightSensorPosition()));
         leftVelocityLogger.update(leftVelocityFilter.calculate(getLeftSensorPosition()));
+
         rightAccelerationLogger.update(
-                rightAccelerationFilter.calculate(
-                        rightVelocityFilter.calculate(getRightSensorPosition())));
+                rightAccelerationFilter.calculate(rightVelocityFilter.getCurrentOutput()));
         leftAccelerationLogger.update(
-                leftAccelerationFilter.calculate(
-                        leftVelocityFilter.calculate(getLeftSensorPosition())));
+                leftAccelerationFilter.calculate(leftVelocityFilter.getCurrentOutput()));
     }
 }

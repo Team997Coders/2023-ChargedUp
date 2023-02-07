@@ -16,16 +16,17 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023;
 
+import com.pathplanner.lib.PathConstraints;
+import com.pathplanner.lib.PathPlanner;
+import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import org.chsrobotics.competition2023.commands.TeleopDrive;
+import org.chsrobotics.competition2023.commands.TrajectoryFollow;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
-import org.chsrobotics.competition2023.subsystems.Grabber;
-import org.chsrobotics.competition2023.subsystems.InertialMeasurement;
-import org.chsrobotics.competition2023.subsystems.Intake;
-import org.chsrobotics.competition2023.subsystems.Pneumatics;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
-import org.chsrobotics.competition2023.subsystems.Vision;
+import org.chsrobotics.lib.input.XboxController;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.util.SRobot;
 
@@ -36,17 +37,7 @@ public class Robot extends SRobot {
 
     private static final PowerDistributionHub pdh = PowerDistributionHub.getInstance();
 
-    private static final InertialMeasurement imu = InertialMeasurement.getInstance();
-
     private static final Drivetrain drivetrain = Drivetrain.getInstance();
-
-    private static final Grabber grabber = Grabber.getInstance();
-
-    private static final Intake intake = Intake.getInstance();
-
-    private static final Pneumatics pneumatics = Pneumatics.getInstance();
-
-    private static final Vision vision = Vision.getInstance();
 
     private static final CommandScheduler scheduler = CommandScheduler.getInstance();
 
@@ -54,22 +45,30 @@ public class Robot extends SRobot {
 
     private static final Timer uptimer = new Timer();
 
+    private static final XboxController controller = new XboxController(0);
+
+    private final Trajectory trajectory =
+            PathPlanner.loadPath("testTraj", new PathConstraints(3, 4));
+
+    private final TrajectoryFollow trajectoryFollow =
+            new TrajectoryFollow(drivetrain, trajectory, true);
+
     @Override
     public void stateTransition(RobotState from, RobotState to) {
         if (from == RobotState.NONE && to == RobotState.DISABLED) {
             // robot initialization
-
             HighLevelLogger.getInstance().startLogging();
             HighLevelLogger.getInstance().logMessage("*******ROBOT STARTUP*******");
-            HighLevelLogger.getInstance().logMessage("997 Competition Robot 2023");
+            HighLevelLogger.getInstance().logMessage("997 Competition Robot 2023: Mantis");
 
             HighLevelLogger.getInstance().autoGenerateLogs("", "system");
 
             DriverStation.startDataLog(HighLevelLogger.getInstance().getLog(), true);
 
+            Config.publishChoosers();
+
             uptimer.reset();
             uptimer.start();
-
         } else if (to == RobotState.TEST) {
             // test mode
             CommandScheduler.getInstance().cancelAll();
@@ -84,6 +83,16 @@ public class Robot extends SRobot {
                     .logMessage("Total energy use (Joules): " + pdh.getTotalEnergyUsed());
             HighLevelLogger.getInstance().logMessage("Loop cycles: " + cycleCounter);
             HighLevelLogger.getInstance().logMessage("Uptime (s): " + uptimer.get());
+        } else if (to == RobotState.TELEOPERATED) {
+            scheduler.schedule(
+                    new TeleopDrive(
+                            drivetrain,
+                            controller.leftStickVerticalAxis(),
+                            controller.rightStickHorizontalAxis(),
+                            controller.AButton(),
+                            controller.BButton()));
+        } else if (to == RobotState.AUTONOMOUS) {
+            scheduler.schedule(trajectoryFollow);
         }
     }
 

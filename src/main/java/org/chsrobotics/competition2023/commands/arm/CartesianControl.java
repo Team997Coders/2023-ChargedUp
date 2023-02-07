@@ -69,14 +69,13 @@ public class CartesianControl extends ParallelCommandGroup {
     public CartesianControl(Arm arm, JoystickAxis xAxis, JoystickAxis yAxis) {
         var armConfig =
                 kinematics.forwardKinematics(
-                        arm.getLocalPotentiometerAngleRadians(),
-                        arm.getDistalPotentiometerAngleRadians());
+                        arm.getLocalAngleRadians(), arm.getDistalAngleRadians());
 
         initialX = armConfig.endEffectorX;
         initialY = armConfig.endEffectorY;
 
-        lastValidLocalAngle = arm.getLocalPotentiometerAngleRadians();
-        lastValidDistalAngle = arm.getDistalPotentiometerAngleRadians();
+        lastValidLocalAngle = arm.getLocalAngleRadians();
+        lastValidDistalAngle = arm.getDistalAngleRadians();
 
         joystickHandler = new JoystickPeriodicHandler(xAxis, yAxis);
 
