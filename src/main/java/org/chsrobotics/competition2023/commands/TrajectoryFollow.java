@@ -17,7 +17,6 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.commands;
 
 import edu.wpi.first.math.controller.DifferentialDriveFeedforward;
-import edu.wpi.first.math.controller.DifferentialDriveWheelVoltages;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
@@ -57,12 +56,21 @@ public class TrajectoryFollow extends CommandBase {
                     Constants.COMMAND.TRAJECTORY_FOLLOWING.K_RAMSETE_B,
                     Constants.COMMAND.TRAJECTORY_FOLLOWING.K_RAMSETE_ZETA);
 
-    private final DifferentialDriveFeedforward feedforward =
+    private final DifferentialDriveFeedforward fastFeedforward =
             new DifferentialDriveFeedforward(
-                    Constants.COMMAND.TRAJECTORY_FOLLOWING.FEED_FORWARD_KV,
-                    Constants.COMMAND.TRAJECTORY_FOLLOWING.FEED_FORWARD_KA,
-                    Constants.COMMAND.TRAJECTORY_FOLLOWING.FEED_FORWARD_ANGULAR_KV,
-                    Constants.COMMAND.TRAJECTORY_FOLLOWING.FEED_FORWARD_ANGULAR_KA);
+                    Constants.SUBSYSTEM.DRIVETRAIN.FAST_KV_LINEAR,
+                    Constants.SUBSYSTEM.DRIVETRAIN.FAST_KA_LINEAR,
+                    Constants.SUBSYSTEM.DRIVETRAIN.FAST_KV_ANGULAR,
+                    Constants.SUBSYSTEM.DRIVETRAIN.FAST_KA_ANGULAR,
+                    Constants.SUBSYSTEM.DRIVETRAIN.TRACKWIDTH_METERS);
+
+    private final DifferentialDriveFeedforward slowFeedforward =
+            new DifferentialDriveFeedforward(
+                    Constants.SUBSYSTEM.DRIVETRAIN.SLOW_KV_LINEAR,
+                    Constants.SUBSYSTEM.DRIVETRAIN.SLOW_KA_LINEAR,
+                    Constants.SUBSYSTEM.DRIVETRAIN.SLOW_KV_ANGULAR,
+                    Constants.SUBSYSTEM.DRIVETRAIN.SLOW_KA_ANGULAR,
+                    Constants.SUBSYSTEM.DRIVETRAIN.TRACKWIDTH_METERS);
 
     private final boolean setPoseToInitial;
 
@@ -81,6 +89,8 @@ public class TrajectoryFollow extends CommandBase {
         timer.start();
 
         if (setPoseToInitial) Localizer.getInstance().setPose(trajectory.getInitialPose());
+
+        drivetrain.setShifters(false);
     }
 
     @Override
@@ -109,7 +119,9 @@ public class TrajectoryFollow extends CommandBase {
         wheelSpeedsLeftSetpointVLogger.update(wheelSpeeds.leftMetersPerSecond);
         wheelSpeedsRightSetpointVLogger.update(wheelSpeeds.rightMetersPerSecond);
 
-        DifferentialDriveWheelVoltages voltages =
+        var feedforward = drivetrain.getShifterSlow() ? slowFeedforward : fastFeedforward;
+
+        var voltages =
                 feedforward.calculate(
                         drivetrain.getLeftSideVelocity(),
                         wheelSpeeds.leftMetersPerSecond,
@@ -119,6 +131,12 @@ public class TrajectoryFollow extends CommandBase {
 
         drivetrain.setLeftVoltages(voltages.left);
         drivetrain.setRightVoltages(voltages.right);
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        drivetrain.setLeftVoltages(0);
+        drivetrain.setRightVoltages(0);
     }
 
     @Override

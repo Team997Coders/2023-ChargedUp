@@ -16,6 +16,8 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023;
 
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
@@ -24,18 +26,28 @@ import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.InertialMeasurement;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
+import org.chsrobotics.competition2023.subsystems.Vision;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
 
 public class Simulation {
     private static final Simulation instance = new Simulation();
 
-    private final DifferentialDrivetrainSim drivetrainSim =
+    private final DifferentialDrivetrainSim fastDrivetrainSim =
             new DifferentialDrivetrainSim(
-                    Constants.SUBSYSTEM.DRIVETRAIN.DRIVETRAIN_PLANT,
+                    Constants.SUBSYSTEM.DRIVETRAIN.FAST_DRIVETRAIN_PLANT,
                     DCMotor.getNEO(2),
-                    1,
-                    1,
-                    1,
+                    Constants.SUBSYSTEM.DRIVETRAIN.FAST_GEAR_RATIO.toDoubleRatioOutputToInput(),
+                    Constants.SUBSYSTEM.DRIVETRAIN.TRACKWIDTH_METERS,
+                    Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS,
+                    null);
+
+    private final DifferentialDrivetrainSim slowDrivetrainSim =
+            new DifferentialDrivetrainSim(
+                    Constants.SUBSYSTEM.DRIVETRAIN.SLOW_DRIVETRAIN_PLANT,
+                    DCMotor.getNEO(2),
+                    Constants.SUBSYSTEM.DRIVETRAIN.SLOW_GEAR_RATIO.toDoubleRatioOutputToInput(),
+                    Constants.SUBSYSTEM.DRIVETRAIN.TRACKWIDTH_METERS,
+                    Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS,
                     null);
 
     private final DifferentiatingFilter drivetrainAccelerationFilter = new DifferentiatingFilter();
@@ -47,29 +59,34 @@ public class Simulation {
     }
 
     public void setDrivetrainInputs(double leftVolts, double rightVolts) {
-        drivetrainSim.setInputs(leftVolts, rightVolts);
+        fastDrivetrainSim.setInputs(leftVolts, rightVolts);
+        slowDrivetrainSim.setInputs(leftVolts, rightVolts);
     }
 
     public void periodic() {
         double totalCurrentDraw = 0;
 
-        drivetrainSim.update(TimedRobot.kDefaultPeriod);
+        DifferentialDrivetrainSim currentSim =
+                Drivetrain.getInstance().getShifterSlow() ? slowDrivetrainSim : fastDrivetrainSim;
 
-        totalCurrentDraw += drivetrainSim.getCurrentDrawAmps();
+        currentSim.update(TimedRobot.kDefaultPeriod);
+
+        totalCurrentDraw += currentSim.getCurrentDrawAmps();
+
+        Vision.getInstance().setSimState(new Pose3d(currentSim.getPose()));
 
         Drivetrain.getInstance()
                 .setSimState(
-                        drivetrainSim.getLeftPositionMeters(),
-                        drivetrainSim.getRightPositionMeters());
+                        currentSim.getLeftPositionMeters(), currentSim.getRightPositionMeters());
 
         InertialMeasurement.getInstance()
                 .setSimState(
                         0,
-                        drivetrainSim.getHeading().getRadians(),
+                        currentSim.getHeading().getRadians(),
                         0,
                         drivetrainAccelerationFilter.calculate(
-                                (drivetrainSim.getRightVelocityMetersPerSecond()
-                                                + drivetrainSim.getLeftVelocityMetersPerSecond())
+                                (currentSim.getRightVelocityMetersPerSecond()
+                                                + currentSim.getLeftVelocityMetersPerSecond())
                                         / 2,
                                 TimedRobot.kDefaultPeriod),
                         0,
@@ -78,5 +95,18 @@ public class Simulation {
         PowerDistributionHub.getInstance().setSimState(totalCurrentDraw);
 
         RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(totalCurrentDraw));
+
+        DifferentialDrivetrainSim notCurrentSim =
+                Drivetrain.getInstance().getShifterSlow() ? fastDrivetrainSim : slowDrivetrainSim;
+
+        notCurrentSim.setState(
+                VecBuilder.fill(
+                        currentSim.getPose().getX(),
+                        currentSim.getPose().getY(),
+                        currentSim.getHeading().getRadians(),
+                        currentSim.getLeftVelocityMetersPerSecond(),
+                        currentSim.getRightVelocityMetersPerSecond(),
+                        currentSim.getLeftPositionMeters(),
+                        currentSim.getRightPositionMeters()));
     }
 }

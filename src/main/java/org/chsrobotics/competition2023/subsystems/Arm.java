@@ -17,13 +17,15 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.subsystems;
 
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import edu.wpi.first.wpilibj.AnalogEncoder;
+import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
+import org.chsrobotics.lib.math.UtilityMath;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
+import org.chsrobotics.lib.math.filters.ExponentialMovingAverage;
 import org.chsrobotics.lib.telemetry.Logger;
+import org.chsrobotics.lib.telemetry.Logger.LoggerFactory;
 
 public class Arm implements Subsystem {
     private static final Arm instance = new Arm();
@@ -31,47 +33,68 @@ public class Arm implements Subsystem {
     private final CANSparkMax distalNEO =
             new CANSparkMax(Constants.SUBSYSTEM.ARM.DISTAL_NEO_CAN_ID, MotorType.kBrushless);
 
-    private final CANSparkMax localNEOa =
-            new CANSparkMax(Constants.SUBSYSTEM.ARM.LOCAL_NEO_A_CAN_ID, MotorType.kBrushless);
+    private final CANSparkMax leftLocalNEO =
+            new CANSparkMax(Constants.SUBSYSTEM.ARM.LEFT_LOCAL_NEO_CAN_ID, MotorType.kBrushless);
 
-    private final CANSparkMax localNEOb =
-            new CANSparkMax(Constants.SUBSYSTEM.ARM.LOCAL_NEO_B_CAN_ID, MotorType.kBrushless);
+    private final CANSparkMax rightLocalNEO =
+            new CANSparkMax(Constants.SUBSYSTEM.ARM.RIGHT_LOCAL_NEO_CAN_ID, MotorType.kBrushless);
 
-    private final AnalogEncoder distalPotentiometer =
-            new AnalogEncoder(Constants.SUBSYSTEM.ARM.DISTAL_POTENTIOMETER_ANALOG_CHANNEL);
+    private final AnalogPotentiometer distalPotentiometer =
+            new AnalogPotentiometer(Constants.SUBSYSTEM.ARM.DISTAL_POTENTIOMETER_ANALOG_CHANNEL);
 
-    private final AnalogEncoder localPotentiometer =
-            new AnalogEncoder(Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_ANALOG_CHANNEL);
+    private final AnalogPotentiometer localPotentiometer =
+            new AnalogPotentiometer(Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_ANALOG_CHANNEL);
+
+    private final ExponentialMovingAverage localAngleSmoother =
+            new ExponentialMovingAverage(
+                    Constants.SUBSYSTEM.ARM.LOCAL_ANGLE_SMOOTHING_RESPONSE_CONSTANT);
+
+    private final ExponentialMovingAverage distalAngleSmoother =
+            new ExponentialMovingAverage(
+                    Constants.SUBSYSTEM.ARM.DISTAL_ANGLE_SMOOTHING_RESPONSE_CONSTANT);
 
     private final DifferentiatingFilter localAccelFilter = new DifferentiatingFilter();
     private final DifferentiatingFilter distalAccelFilter = new DifferentiatingFilter();
 
     private final String subdirString = "arm";
 
-    private final Logger<Double> distalPositionLogger =
-            new Logger<>("distalPosition_radians", subdirString);
-    private final Logger<Double> localPositionLogger =
-            new Logger<>("localPosition_radians", subdirString);
+    private final LoggerFactory<Double> factory = new LoggerFactory<>(subdirString);
+
+    private final Logger<Double> distalEncoderPositionLogger =
+            factory.getLogger("distalEncoderPosition_radians");
+    private final Logger<Double> localEncoderPositionLogger =
+            factory.getLogger("localEncoderPosition_radians");
+
+    private final Logger<Double> distalPotPositionLogger =
+            factory.getLogger("distalPotPosition_radians");
+    private final Logger<Double> localPotPositionLogger =
+            factory.getLogger("localPotPosition_radians");
+
+    private final Logger<Double> distalFusedPositionLogger =
+            factory.getLogger("distalFusedPosition_radians");
+    private final Logger<Double> localFusedPositionLogger =
+            factory.getLogger("localFusedPosition_radians");
+
     private final Logger<Double> distalVelocityLogger =
-            new Logger<>("distalVelocity_radiansPerSecond", subdirString);
+            factory.getLogger("distalVelocity_radiansPerSecond");
     private final Logger<Double> localVelocityLogger =
-            new Logger<>("localVelocity_radiansPerSecond", subdirString);
+            factory.getLogger("localVelocity_radiansPerSecond");
+
     private final Logger<Double> distalAccelLogger =
-            new Logger<>("distalAccel_radiansPerSecondSquared", subdirString);
+            factory.getLogger("distalAccel_radiansPerSecondSquared");
     private final Logger<Double> localAccelLogger =
-            new Logger<>("localAccel_radiansPerSecondSqaured", subdirString);
+            factory.getLogger("localAccel_radiansPerSecondSqaured");
+
     private final Logger<Double> distalNeoCurrentLogger =
-            new Logger<>("distalNeoCurrent_amps", subdirString);
-    private final Logger<Double> localNeoACuCrrentLogger =
-            new Logger<>("localNeoACurrent_amps", subdirString);
-    private final Logger<Double> localNeoBCurrentLogger =
-            new Logger<>("localNeoBCurrent_amps", subdirString);
-    private final Logger<Double> distalNeoTempLogger =
-            new Logger<>("distalNeoTemp_C", subdirString);
-    private final Logger<Double> localNeoATempLogger =
-            new Logger<>("localNeoATemp_C", subdirString);
-    private final Logger<Double> localNeoBTempLogger =
-            new Logger<>("localNeoBTemp_c", subdirString);
+            factory.getLogger("distalNeoCurrent_amps");
+    private final Logger<Double> leftLocalNEOCurrentLogger =
+            factory.getLogger("localNeoACurrent_amps");
+    private final Logger<Double> rightLocalNEOCurrentLogger =
+            factory.getLogger("localNeoBCurrent_amps");
+
+    private final Logger<Double> distalNeoTempLogger = factory.getLogger("distalNeoTemp_C");
+    private final Logger<Double> leftLocalNEOTempLogger = factory.getLogger("localNeoATemp_C");
+    private final Logger<Double> rightLocalNEOTempLogger = factory.getLogger("localNeoBTemp_c");
 
     private double localVelocity = 0;
     private double distalVelocity = 0;
@@ -79,25 +102,63 @@ public class Arm implements Subsystem {
     private double previousDistalPosition = 0;
     private double previousLocalPosition = 0;
 
+    private final double initLocalPosition;
+    private final double initDistalPosition;
+
     private Arm() {
         register();
 
         distalNEO.setInverted(Constants.SUBSYSTEM.ARM.DISTAL_NEO_INVERTED);
-        localNEOa.setInverted(Constants.SUBSYSTEM.ARM.LOCAL_NEO_A_INVERTED);
-        localNEOb.setInverted(Constants.SUBSYSTEM.ARM.LOCAL_NEO_B_INVERTED);
+        leftLocalNEO.setInverted(Constants.SUBSYSTEM.ARM.LEFT_LOCAL_NEO_INVERTED);
+        rightLocalNEO.setInverted(Constants.SUBSYSTEM.ARM.RIGHT_LOCAL_NEO_INVERTED);
+
+        distalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
+        leftLocalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
+        rightLocalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
+
+        initLocalPosition = getLocalAngleRadians();
+        initDistalPosition = getDistalAngleRadians();
+
+        factory.getLogger("initLocalPosition_radians").update(initLocalPosition);
+        factory.getLogger("initDistalPosition_radians").update(initDistalPosition);
     }
 
-    public double getDistalPotentiometerAngleRadians() {
-        ;
-        return Constants.SUBSYSTEM.ARM.DISTAL_POTENTIOMTER_CONVERSION_HELPER.outputFromInput(
-                        distalPotentiometer.getAbsolutePosition())
+    public double getDistalAngleRadians() {
+        return distalAngleSmoother.getCurrentOutput();
+    }
+
+    public double getLocalAngleRadians() {
+        return localAngleSmoother.getCurrentOutput();
+    }
+
+    private double getPotDistalAngle() {
+        return Constants.SUBSYSTEM.ARM.DISTAL_POTENTIOMETER_CONVERSION_HELPER.outputFromInput(
+                        distalPotentiometer.get())
                 - Constants.SUBSYSTEM.ARM.DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO;
     }
 
-    public double getLocalPotentiometerAngleRadians() {
+    private double getPotLocalAngle() {
         return Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_CONVERSION_HELPER.outputFromInput(
-                        localPotentiometer.getAbsolutePosition())
+                        localPotentiometer.get())
                 - Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO;
+    }
+
+    private double getEncoderDistalAngle() {
+        return Constants.SUBSYSTEM.ARM.DISTAL_MOTOR_CONVERSION_HELPER.outputFromInput(
+                        distalNEO.getEncoder().getPosition())
+                + initDistalPosition;
+    }
+
+    private double getEncoderLocalAngle() {
+        double avg =
+                UtilityMath.arithmeticMean(
+                        new double[] {
+                            leftLocalNEO.getEncoder().getPosition(),
+                            rightLocalNEO.getEncoder().getPosition()
+                        });
+
+        return Constants.SUBSYSTEM.ARM.LOCAL_MOTORS_CONVERSION_HELPER.outputFromInput(avg)
+                + initLocalPosition;
     }
 
     public void setDistalVoltage(double voltage) {
@@ -105,17 +166,8 @@ public class Arm implements Subsystem {
     }
 
     public void setLocalVoltage(double voltage) {
-        localNEOa.setVoltage(voltage);
-        localNEOb.setVoltage(voltage);
-    }
-
-    public void setDistalIdleMode(boolean trueIfCoast) {
-        distalNEO.setIdleMode(trueIfCoast ? IdleMode.kCoast : IdleMode.kBrake);
-    }
-
-    public void setLocalIdleMode(boolean trueIfCoast) {
-        localNEOa.setIdleMode(trueIfCoast ? IdleMode.kCoast : IdleMode.kBrake);
-        localNEOb.setIdleMode(trueIfCoast ? IdleMode.kCoast : IdleMode.kBrake);
+        leftLocalNEO.setVoltage(voltage);
+        rightLocalNEO.setVoltage(voltage);
     }
 
     public double getDistalVelocityRadiansPerSecond() {
@@ -136,8 +188,16 @@ public class Arm implements Subsystem {
 
     @Override
     public void periodic() {
-        double distalDeltaPosition = getDistalPotentiometerAngleRadians() - previousDistalPosition;
-        double localDeltaPostion = getLocalPotentiometerAngleRadians() - previousLocalPosition;
+        localAngleSmoother.calculate(
+                UtilityMath.arithmeticMean(
+                        new double[] {getPotLocalAngle(), getEncoderLocalAngle()}));
+
+        distalAngleSmoother.calculate(
+                UtilityMath.arithmeticMean(
+                        new double[] {getPotDistalAngle(), getEncoderDistalAngle()}));
+
+        double distalDeltaPosition = getDistalAngleRadians() - previousDistalPosition;
+        double localDeltaPostion = getLocalAngleRadians() - previousLocalPosition;
 
         distalVelocity = distalDeltaPosition / 0.02;
         localVelocity = localDeltaPostion / 0.02;
@@ -145,21 +205,31 @@ public class Arm implements Subsystem {
         localAccelFilter.calculate(localVelocity);
         distalAccelFilter.calculate(distalVelocity);
 
-        previousDistalPosition = getDistalPotentiometerAngleRadians();
-        previousLocalPosition = getLocalPotentiometerAngleRadians();
+        previousDistalPosition = getDistalAngleRadians();
+        previousLocalPosition = getLocalAngleRadians();
 
-        distalPositionLogger.update(getDistalPotentiometerAngleRadians());
-        localPositionLogger.update(getLocalPotentiometerAngleRadians());
+        distalFusedPositionLogger.update(getDistalAngleRadians());
+        localFusedPositionLogger.update(getLocalAngleRadians());
+
+        distalEncoderPositionLogger.update(getEncoderDistalAngle());
+        localEncoderPositionLogger.update(getEncoderLocalAngle());
+
+        distalPotPositionLogger.update(getPotDistalAngle());
+        localPotPositionLogger.update(getPotLocalAngle());
+
         distalVelocityLogger.update(getDistalVelocityRadiansPerSecond());
         localVelocityLogger.update(getLocalVelociyRadiansPerSecond());
+
         distalAccelLogger.update(getDistalAccelRadiansPerSecondSquared());
         localAccelLogger.update(getLocalAccelRadiansPerSecondSquared());
+
         distalNeoCurrentLogger.update(distalNEO.getOutputCurrent());
-        localNeoACuCrrentLogger.update(localNEOa.getOutputCurrent());
-        localNeoBCurrentLogger.update(localNEOb.getOutputCurrent());
+        leftLocalNEOCurrentLogger.update(leftLocalNEO.getOutputCurrent());
+        rightLocalNEOCurrentLogger.update(rightLocalNEO.getOutputCurrent());
+
         distalNeoTempLogger.update(distalNEO.getMotorTemperature());
-        localNeoATempLogger.update(localNEOa.getMotorTemperature());
-        localNeoBTempLogger.update(localNEOb.getMotorTemperature());
+        leftLocalNEOTempLogger.update(leftLocalNEO.getMotorTemperature());
+        rightLocalNEOTempLogger.update(rightLocalNEO.getMotorTemperature());
     }
 
     public static Arm getInstance() {

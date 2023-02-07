@@ -33,10 +33,6 @@ public class Localizer {
 
     private final Vision vision = Vision.getInstance();
 
-    private final Drivetrain drivetrain = Drivetrain.getInstance();
-
-    private final InertialMeasurement imu = InertialMeasurement.getInstance();
-
     private final Field2d field2d = new Field2d();
 
     private final DifferentialDrivePoseEstimator poseEstimator =
