@@ -24,6 +24,8 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.chsrobotics.competition2023.commands.TeleopDrive;
 import org.chsrobotics.competition2023.commands.TrajectoryFollow;
+import org.chsrobotics.competition2023.commands.arm.ArmNavigate;
+import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
 import org.chsrobotics.lib.input.XboxController;
@@ -91,6 +93,7 @@ public class Robot extends SRobot {
                             controller.rightStickHorizontalAxis(),
                             controller.AButton(),
                             controller.BButton()));
+            scheduler.schedule(new ArmNavigate(Arm.getInstance()));
         } else if (to == RobotState.AUTONOMOUS) {
             scheduler.schedule(trajectoryFollow);
         }

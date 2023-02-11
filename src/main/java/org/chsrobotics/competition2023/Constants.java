@@ -164,10 +164,10 @@ public final class Constants {
                     new GearRatioHelper(1, 1);
 
             public static final GearRatioHelper DISTAL_MOTOR_CONVERSION_HELPER =
-                    new GearRatioHelper(1, 1);
+                    new GearRatioHelper(1, 100);
 
             public static final GearRatioHelper LOCAL_MOTORS_CONVERSION_HELPER =
-                    new GearRatioHelper(1, 1);
+                    new GearRatioHelper(1, 200);
 
             public static final double LOCAL_ANGLE_SMOOTHING_RESPONSE_CONSTANT = 0.25;
 
@@ -185,7 +185,7 @@ public final class Constants {
 
             public static final double LOCAL_LENGTH_METERS = 1;
 
-            public static final double LOCAL_MOMENT_ABOUT_COM = 2;
+            public static final double LOCAL_MOMENT_ABOUT_COM = 0.5;
 
             public static final double DISTAL_COM_POSITION_FROM_ROOT_METERS = 0.5;
 
@@ -193,7 +193,7 @@ public final class Constants {
 
             public static final double DISTAL_LENGTH_METERS = 1;
 
-            public static final double DISTAL_MOMENT_ABOUT_COM = 2;
+            public static final double DISTAL_MOMENT_ABOUT_COM = 0.5;
 
             public static final IdleMode IDLE_MODE = IdleMode.kBrake;
         }
@@ -201,12 +201,13 @@ public final class Constants {
 
     public static final class COMMAND {
         public static final class ARM_SETPOINT {
-            public static final PIDConstants LOCAL_CONTROLLER_CONSTANTS = new PIDConstants(0, 0, 0);
+            public static final PIDConstants LOCAL_CONTROLLER_CONSTANTS =
+                    new PIDConstants(12, 0, 0);
 
             public static final int LOCAL_CONTROLLER_INTEGRATION_WINDOW = -1;
 
             public static final PIDConstants DISTAL_CONTROLLER_CONSTANTS =
-                    new PIDConstants(0, 0, 0);
+                    new PIDConstants(12, 0, 0);
 
             public static final int DISTAL_CONTROLLER_INTEGRATION_WINDOW = -1;
         }

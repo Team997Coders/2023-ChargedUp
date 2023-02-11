@@ -16,15 +16,18 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023.commands.arm;
 
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import java.util.function.DoubleSupplier;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.lib.controllers.feedback.PID;
-import org.chsrobotics.lib.controllers.feedforward.TwoJointArmFeedforward;
 import org.chsrobotics.lib.math.UtilityMath;
-import org.chsrobotics.lib.util.Tuple2;
+import org.chsrobotics.lib.models.DoubleJointedArmSim;
+import org.chsrobotics.lib.telemetry.Logger;
 
 // TODO: new command loggers
 public class ArmSetpointControl extends CommandBase {
@@ -33,30 +36,40 @@ public class ArmSetpointControl extends CommandBase {
     private final DoubleSupplier localAngleRadians;
     private final DoubleSupplier distalAngleRadians;
 
-    private final TwoJointArmFeedforward feedforward =
-            new TwoJointArmFeedforward(
-                    Constants.SUBSYSTEM.ARM.LOCAL_COM_POSITION_FROM_ROOT_METERS,
+    private final DoubleJointedArmSim armSim =
+            new DoubleJointedArmSim(
                     Constants.SUBSYSTEM.ARM.LOCAL_MASS_KG,
+                    Constants.SUBSYSTEM.ARM.LOCAL_COM_POSITION_FROM_ROOT_METERS,
+                    Constants.SUBSYSTEM.ARM.LOCAL_MOMENT_ABOUT_COM,
                     Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
+                    DCMotor.getNEO(2)
+                            .withReduction(
+                                    Constants.SUBSYSTEM.ARM.LOCAL_MOTORS_CONVERSION_HELPER
+                                            .toDoubleRatioOutputToInput()),
+                    Constants.SUBSYSTEM.ARM.DISTAL_MASS_KG,
                     Constants.SUBSYSTEM.ARM.DISTAL_COM_POSITION_FROM_ROOT_METERS,
-                    Constants.SUBSYSTEM.ARM.DISTAL_MASS_KG);
+                    Constants.SUBSYSTEM.ARM.DISTAL_MOMENT_ABOUT_COM,
+                    DCMotor.getNEO(1)
+                            .withReduction(
+                                    Constants.SUBSYSTEM.ARM.DISTAL_MOTOR_CONVERSION_HELPER
+                                            .toDoubleRatioOutputToInput()));
+
+    private final String subdirString = "armSetpointControl";
+
+    private final Logger<Double> localFeedforwardLogger =
+            new Logger<>("localFeedforward_v", subdirString);
+
+    private final Logger<Double> distalFeedforwardLogger =
+            new Logger<>("distalFeedforward_v", subdirString);
+
+    private final Logger<Double> localSetpointLogger =
+            new Logger<>("localSetpoint_rad", subdirString);
+
+    private final Logger<Double> distalSetpointLogger =
+            new Logger<>("distalSetpoint_rad", subdirString);
 
     private final PID localController;
     private final PID distalController;
-
-    private final DCMotor localGearbox =
-            DCMotor.getNEO(2)
-                    .withReduction(
-                            Constants.SUBSYSTEM.ARM.LOCAL_MOTORS_CONVERSION_HELPER
-                                    .toDoubleRatioOutputToInput());
-
-    private final DCMotor distalGearbox =
-            DCMotor.getNEO(1)
-                    .withReduction(
-                            Constants.SUBSYSTEM.ARM.DISTAL_MOTOR_CONVERSION_HELPER
-                                    .toDoubleRatioOutputToInput());
-
-    private final String subdirString = "armSetpointControl";
 
     public ArmSetpointControl(
             Arm arm, DoubleSupplier localAngleRadians, DoubleSupplier distalAngleRadians) {
@@ -69,13 +82,15 @@ public class ArmSetpointControl extends CommandBase {
                 new PID(
                         Constants.COMMAND.ARM_SETPOINT.LOCAL_CONTROLLER_CONSTANTS,
                         Constants.COMMAND.ARM_SETPOINT.LOCAL_CONTROLLER_INTEGRATION_WINDOW,
-                        localAngleRadians.getAsDouble());
+                        localAngleRadians.getAsDouble(),
+                        true);
 
         distalController =
                 new PID(
                         Constants.COMMAND.ARM_SETPOINT.DISTAL_CONTROLLER_CONSTANTS,
                         Constants.COMMAND.ARM_SETPOINT.DISTAL_CONTROLLER_INTEGRATION_WINDOW,
-                        distalAngleRadians.getAsDouble());
+                        distalAngleRadians.getAsDouble(),
+                        true);
     }
 
     public ArmSetpointControl(Arm arm, double localAngleRadians, double distalAngleRadians) {
@@ -93,42 +108,36 @@ public class ArmSetpointControl extends CommandBase {
         localController.updateLogs();
         distalController.updateLogs();
 
-        double localWrappedSetpoint =
-                UtilityMath.smallestAngleRadiansBetween(
-                                localAngleRadians.getAsDouble(), arm.getLocalAngleRadians())
-                        + arm.getLocalAngleRadians();
+        double localAngle = UtilityMath.normalizeAngleRadians(arm.getLocalAngleRadians());
+        double distalAngle = UtilityMath.normalizeAngleRadians(arm.getDistalAngleRadians());
 
-        double distalWrappedSetpoint =
-                UtilityMath.smallestAngleRadiansBetween(
-                                distalAngleRadians.getAsDouble(), arm.getDistalAngleRadians())
-                        + arm.getDistalAngleRadians();
+        double localSetpoint = UtilityMath.normalizeAngleRadians(localAngleRadians.getAsDouble());
+        double distalSetpoint = UtilityMath.normalizeAngleRadians(distalAngleRadians.getAsDouble());
 
-        double localFeedbackU = localController.calculate(localWrappedSetpoint);
-        double distalFeedbackU = distalController.calculate(distalWrappedSetpoint);
+        localController.setSetpoint(localSetpoint);
+        distalController.setSetpoint(distalSetpoint);
 
-        var torques =
-                feedforward.getFeedforwardTorques(
-                        Tuple2.of(
-                                localAngleRadians.getAsDouble(), distalAngleRadians.getAsDouble()),
-                        Tuple2.of(
-                                arm.getLocalVelociyRadiansPerSecond(),
-                                arm.getDistalVelocityRadiansPerSecond()));
+        double localFeedbackU = localController.calculate(localAngle);
+        double distalFeedbackU = distalController.calculate(distalAngle);
 
-        double localFeedfowardU =
-                (torques.firstValue() * localGearbox.nominalVoltageVolts)
-                        / localGearbox.stallTorqueNewtonMeters;
+        Vector<N2> feedforwardU =
+                armSim.feedforward(VecBuilder.fill(localSetpoint, distalSetpoint));
 
-        double distalFeedforwardU =
-                (torques.secondValue() * distalGearbox.nominalVoltageVolts)
-                        / distalGearbox.stallTorqueNewtonMeters;
+        localFeedforwardLogger.update(feedforwardU.get(0, 0));
+        distalFeedforwardLogger.update(feedforwardU.get(1, 0));
 
-        arm.setLocalVoltage(localFeedbackU + localFeedfowardU);
-        arm.setDistalVoltage(distalFeedbackU + distalFeedforwardU);
+        localSetpointLogger.update(localSetpoint);
+        distalSetpointLogger.update(distalSetpoint);
+
+        double localU = localFeedbackU + feedforwardU.get(0, 0);
+
+        double distalU = distalFeedbackU + feedforwardU.get(1, 0);
+
+        arm.setVoltages(localU, distalU);
     }
 
     @Override
     public void end(boolean interrupted) {
-        arm.setLocalVoltage(0);
-        arm.setDistalVoltage(0);
+        arm.setVoltages(0, 0);
     }
 }

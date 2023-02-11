@@ -16,18 +16,24 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023;
 
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
+import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.InertialMeasurement;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
 import org.chsrobotics.competition2023.subsystems.Vision;
+import org.chsrobotics.lib.math.UtilityMath;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
+import org.chsrobotics.lib.models.DoubleJointedArmSim;
 
 public class Simulation {
     private static final Simulation instance = new Simulation();
@@ -50,6 +56,28 @@ public class Simulation {
                     Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS,
                     null);
 
+    private final DoubleJointedArmSim armSim =
+            new DoubleJointedArmSim(
+                    Constants.SUBSYSTEM.ARM.LOCAL_MASS_KG,
+                    Constants.SUBSYSTEM.ARM.LOCAL_COM_POSITION_FROM_ROOT_METERS,
+                    Constants.SUBSYSTEM.ARM.LOCAL_MOMENT_ABOUT_COM,
+                    Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
+                    DCMotor.getNEO(2)
+                            .withReduction(
+                                    Constants.SUBSYSTEM.ARM.LOCAL_MOTORS_CONVERSION_HELPER
+                                            .toDoubleRatioOutputToInput()),
+                    Constants.SUBSYSTEM.ARM.DISTAL_MASS_KG,
+                    Constants.SUBSYSTEM.ARM.DISTAL_COM_POSITION_FROM_ROOT_METERS,
+                    Constants.SUBSYSTEM.ARM.DISTAL_MOMENT_ABOUT_COM,
+                    DCMotor.getNEO(1)
+                            .withReduction(
+                                    Constants.SUBSYSTEM.ARM.DISTAL_MOTOR_CONVERSION_HELPER
+                                            .toDoubleRatioOutputToInput()));
+
+    private Vector<N2> armInputVoltages = VecBuilder.fill(0, 0);
+
+    private Matrix<N2, N2> armState = new Matrix<>(N2.instance, N2.instance);
+
     private final DifferentiatingFilter drivetrainAccelerationFilter = new DifferentiatingFilter();
 
     private Simulation() {}
@@ -63,13 +91,17 @@ public class Simulation {
         slowDrivetrainSim.setInputs(leftVolts, rightVolts);
     }
 
+    public void setArmInputs(double localVoltage, double distalVoltage) {
+        armInputVoltages = VecBuilder.fill(localVoltage, distalVoltage);
+    }
+
     public void periodic() {
         double totalCurrentDraw = 0;
 
         DifferentialDrivetrainSim currentSim =
                 Drivetrain.getInstance().getShifterSlow() ? slowDrivetrainSim : fastDrivetrainSim;
 
-        currentSim.update(TimedRobot.kDefaultPeriod);
+        armState = armSim.simulate(armState, armInputVoltages, 0.02);
 
         totalCurrentDraw += currentSim.getCurrentDrawAmps();
 
@@ -91,6 +123,11 @@ public class Simulation {
                                 TimedRobot.kDefaultPeriod),
                         0,
                         0);
+
+        Arm.getInstance()
+                .setSimState(
+                        UtilityMath.normalizeAngleRadians(armState.get(0, 0)),
+                        UtilityMath.normalizeAngleRadians(armState.get(0, 1)));
 
         PowerDistributionHub.getInstance().setSimState(totalCurrentDraw);
 

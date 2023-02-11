@@ -21,7 +21,7 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.lib.input.JoystickAxis;
-import org.chsrobotics.lib.kinematics.RevoluteRevoluteKinematics;
+import org.chsrobotics.lib.models.DoubleJointedArmKinematics;
 
 public class CartesianControl extends ParallelCommandGroup {
     private class JoystickPeriodicHandler extends CommandBase {
@@ -53,8 +53,8 @@ public class CartesianControl extends ParallelCommandGroup {
         }
     }
 
-    private final RevoluteRevoluteKinematics kinematics =
-            new RevoluteRevoluteKinematics(
+    private final DoubleJointedArmKinematics kinematics =
+            new DoubleJointedArmKinematics(
                     Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
                     Constants.SUBSYSTEM.ARM.DISTAL_LENGTH_METERS);
 
@@ -94,7 +94,7 @@ public class CartesianControl extends ParallelCommandGroup {
         if (armConfigs.firstValue() == null) {
             return lastValidLocalAngle;
         } else { // have to always use the first solution so that our two sources of angles agree
-            lastValidLocalAngle = armConfigs.firstValue().jointAAngle;
+            lastValidLocalAngle = armConfigs.firstValue().localAngle;
             return lastValidLocalAngle;
         }
     }
@@ -108,7 +108,7 @@ public class CartesianControl extends ParallelCommandGroup {
         if (armConfigs.firstValue() == null) {
             return lastValidDistalAngle;
         } else { // have to always use the first solution so that our two sources of angles agree
-            lastValidDistalAngle = armConfigs.firstValue().jointBAngle;
+            lastValidDistalAngle = armConfigs.firstValue().distalAngle;
             return lastValidDistalAngle;
         }
     }

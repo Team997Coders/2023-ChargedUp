@@ -18,12 +18,18 @@ package org.chsrobotics.competition2023.subsystems;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
+import org.chsrobotics.competition2023.Robot;
+import org.chsrobotics.competition2023.Simulation;
 import org.chsrobotics.lib.math.UtilityMath;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
 import org.chsrobotics.lib.math.filters.ExponentialMovingAverage;
+import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.telemetry.Logger;
 import org.chsrobotics.lib.telemetry.Logger.LoggerFactory;
 
@@ -105,6 +111,26 @@ public class Arm implements Subsystem {
     private final double initLocalPosition;
     private final double initDistalPosition;
 
+    private double simLocalAngle = 0;
+    private double simDistalAngle = 0;
+
+    private final Mechanism2d vis = new Mechanism2d(4, 4);
+
+    private final MechanismLigament2d local =
+            vis.getRoot("root", 2, 2)
+                    .append(
+                            new MechanismLigament2d(
+                                    "local",
+                                    Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
+                                    getLocalAngleRadians()));
+
+    private final MechanismLigament2d distal =
+            local.append(
+                    new MechanismLigament2d(
+                            "distal",
+                            Constants.SUBSYSTEM.ARM.DISTAL_LENGTH_METERS,
+                            getDistalAngleRadians()));
+
     private Arm() {
         register();
 
@@ -124,11 +150,15 @@ public class Arm implements Subsystem {
     }
 
     public double getDistalAngleRadians() {
-        return distalAngleSmoother.getCurrentOutput();
+        if (Robot.isReal()) {
+            return distalAngleSmoother.getCurrentOutput();
+        } else return simDistalAngle;
     }
 
     public double getLocalAngleRadians() {
-        return localAngleSmoother.getCurrentOutput();
+        if (Robot.isReal()) {
+            return localAngleSmoother.getCurrentOutput();
+        } else return simLocalAngle;
     }
 
     private double getPotDistalAngle() {
@@ -161,13 +191,13 @@ public class Arm implements Subsystem {
                 + initLocalPosition;
     }
 
-    public void setDistalVoltage(double voltage) {
-        distalNEO.setVoltage(voltage);
-    }
+    public void setVoltages(double localVoltage, double distalVoltage) {
+        distalNEO.setVoltage(distalVoltage);
 
-    public void setLocalVoltage(double voltage) {
-        leftLocalNEO.setVoltage(voltage);
-        rightLocalNEO.setVoltage(voltage);
+        leftLocalNEO.setVoltage(localVoltage);
+        rightLocalNEO.setVoltage(localVoltage);
+
+        Simulation.getInstance().setArmInputs(localVoltage, distalVoltage);
     }
 
     public double getDistalVelocityRadiansPerSecond() {
@@ -196,8 +226,35 @@ public class Arm implements Subsystem {
                 UtilityMath.arithmeticMean(
                         new double[] {getPotDistalAngle(), getEncoderDistalAngle()}));
 
-        double distalDeltaPosition = getDistalAngleRadians() - previousDistalPosition;
-        double localDeltaPostion = getLocalAngleRadians() - previousLocalPosition;
+        double distalDeltaPosition;
+
+        if (previousDistalPosition < getDistalAngleRadians()) {
+            distalDeltaPosition =
+                    UtilityMath.smallestAngleRadiansBetween(
+                            previousDistalPosition, getDistalAngleRadians());
+        } else {
+            distalDeltaPosition =
+                    UtilityMath.smallestAngleRadiansBetween(
+                            getDistalAngleRadians(), previousDistalPosition);
+        }
+
+        double localDeltaPostion;
+
+        if (previousLocalPosition < getLocalAngleRadians()) {
+            localDeltaPostion =
+                    UtilityMath.smallestAngleRadiansBetween(
+                            previousLocalPosition, getLocalAngleRadians());
+        } else {
+            localDeltaPostion =
+                    UtilityMath.smallestAngleRadiansBetween(
+                            getLocalAngleRadians(), previousLocalPosition);
+        }
+
+        local.setAngle(new Rotation2d(getLocalAngleRadians()));
+
+        distal.setAngle(new Rotation2d(getDistalAngleRadians()));
+
+        HighLevelLogger.getInstance().publishSendable("armVis", vis);
 
         distalVelocity = distalDeltaPosition / 0.02;
         localVelocity = localDeltaPostion / 0.02;
@@ -234,5 +291,17 @@ public class Arm implements Subsystem {
 
     public static Arm getInstance() {
         return instance;
+    }
+
+    public void setSimState(double localAngleRadians, double distalAngleRadians) {
+        if (!Robot.isReal()) {
+            simLocalAngle = localAngleRadians;
+            simDistalAngle = distalAngleRadians;
+        } else {
+            HighLevelLogger.getInstance()
+                    .logWarning("Sim state should not be set on a real robot!");
+            HighLevelLogger.getInstance()
+                    .logWarning("There might be sim code still running somewhere!");
+        }
     }
 }
