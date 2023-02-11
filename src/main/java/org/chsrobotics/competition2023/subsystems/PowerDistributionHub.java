@@ -40,11 +40,11 @@ public class PowerDistributionHub implements Subsystem {
 
     private final Logger<Double> temperatureLogger = new Logger<>("temperature_C", subdirString);
 
-    private final Logger<Boolean> switchableChannelLogger =
-            new Logger<>("switchableChannelOn", subdirString);
-
     private PowerDistributionHub() {
         register();
+
+        // explicitly set as on because all our coprocessors are off that branch
+        pdh.setSwitchableChannel(true);
     }
 
     public static PowerDistributionHub getInstance() {
@@ -58,14 +58,6 @@ public class PowerDistributionHub implements Subsystem {
     public double getTotalCurrent() {
         if (Robot.isReal()) return pdh.getTotalCurrent();
         else return simTotalCurrent;
-    }
-
-    public boolean getSwitchableChannelState() {
-        return pdh.getSwitchableChannel();
-    }
-
-    public void setSwitchableChannel(boolean on) {
-        pdh.setSwitchableChannel(on);
     }
 
     public double getTotalEnergyUsed() {
@@ -93,7 +85,5 @@ public class PowerDistributionHub implements Subsystem {
         busVoltageLogger.update(pdh.getVoltage());
 
         temperatureLogger.update(pdh.getTemperature());
-
-        switchableChannelLogger.update(pdh.getSwitchableChannel());
     }
 }
