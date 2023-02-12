@@ -26,6 +26,9 @@ import org.chsrobotics.competition2023.commands.TeleopDrive;
 import org.chsrobotics.competition2023.commands.TrajectoryFollow;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
+import org.chsrobotics.lib.input.JoystickAxis;
+import org.chsrobotics.lib.input.JoystickButton;
+import org.chsrobotics.lib.input.VirtualJoystickButton;
 import org.chsrobotics.lib.input.XboxController;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.util.SRobot;
@@ -53,6 +56,12 @@ public class Robot extends SRobot {
     private final TrajectoryFollow trajectoryFollow =
             new TrajectoryFollow(drivetrain, trajectory, true);
 
+    private final JoystickAxis driveLin = controller.leftStickVerticalAxis();
+    private final JoystickAxis driveRot = controller.rightStickHorizontalAxis();
+    private final JoystickButton shift =
+            new VirtualJoystickButton(controller.rightTriggerAxis(), 0.1, 1, false);
+    private final JoystickButton brake = controller.BButton();
+
     @Override
     public void stateTransition(RobotState from, RobotState to) {
         if (from == RobotState.NONE && to == RobotState.DISABLED) {
@@ -66,6 +75,10 @@ public class Robot extends SRobot {
             DriverStation.startDataLog(HighLevelLogger.getInstance().getLog(), true);
 
             Config.publishChoosers();
+
+            driveRot.setInverted(true);
+            driveRot.addDeadband(0.1);
+            driveLin.addDeadband(0.1);
 
             uptimer.reset();
             uptimer.start();
@@ -84,13 +97,7 @@ public class Robot extends SRobot {
             HighLevelLogger.getInstance().logMessage("Loop cycles: " + cycleCounter);
             HighLevelLogger.getInstance().logMessage("Uptime (s): " + uptimer.get());
         } else if (to == RobotState.TELEOPERATED) {
-            scheduler.schedule(
-                    new TeleopDrive(
-                            drivetrain,
-                            controller.leftStickVerticalAxis(),
-                            controller.rightStickHorizontalAxis(),
-                            controller.AButton(),
-                            controller.BButton()));
+            scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift, brake));
         } else if (to == RobotState.AUTONOMOUS) {
             scheduler.schedule(trajectoryFollow);
         }

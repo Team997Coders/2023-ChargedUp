@@ -50,12 +50,12 @@ public final class Constants {
 
             public static final boolean FRONT_RIGHT_IS_INVERTED = false;
             public static final boolean BACK_RIGHT_IS_INVERTED = false;
-            public static final boolean FRONT_LEFT_IS_INVERTED = false;
-            public static final boolean BACK_LEFT_IS_INVERTED = false;
+            public static final boolean FRONT_LEFT_IS_INVERTED = true;
+            public static final boolean BACK_LEFT_IS_INVERTED = true;
 
             public static final boolean SHIFTER_SOLENOID_INVERTED = false;
 
-            public static final int SHIFTER_SOLENOID_CHANNEL = 3;
+            public static final int SHIFTER_SOLENOID_CHANNEL = 2;
 
             public static final GearRatioHelper SLOW_GEAR_RATIO = new GearRatioHelper(1, 1);
 
@@ -119,7 +119,7 @@ public final class Constants {
             public static final int LEFT_MOTOR_CANID = 9;
             public static final int RIGHT_MOTOR_CANID = 10;
 
-            public static final int DEPLOY_SOLENOID_CHANNEL = 2;
+            public static final int DEPLOY_SOLENOID_CHANNEL = 1;
 
             public static final boolean LEFT_MOTOR_INVERTED = false;
             public static final boolean RIGHT_MOTOR_INVERTED = false;
@@ -132,7 +132,7 @@ public final class Constants {
         }
 
         public static final class GRABBER {
-            public static final int SOLENOID_CHANNEL = 1;
+            public static final int SOLENOID_CHANNEL = 0;
 
             public static final boolean SOLENOID_INVERTED = false;
         }
