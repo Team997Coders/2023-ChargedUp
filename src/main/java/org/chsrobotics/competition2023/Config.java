@@ -139,6 +139,9 @@ public class Config {
 
     public static void publishChoosers() {
         HighLevelLogger.getInstance()
+                .publishSendable("teleopDriveModeChooser", TELEOP_DRIVE_MODES.MODE_CHOOSER);
+
+        HighLevelLogger.getInstance()
                 .publishSendable(
                         "teleopDriveLinearModifierChooser",
                         TELEOP_DRIVE_MODES.LINEAR_MODIFIER_CHOOSER);

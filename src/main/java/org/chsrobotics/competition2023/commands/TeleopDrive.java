@@ -110,7 +110,16 @@ public class TeleopDrive extends CommandBase {
                         (mode.execute().left) * Constants.GLOBAL.GLOBAL_NOMINAL_VOLTAGE_VOLTS,
                         (mode.execute().right) * Constants.GLOBAL.GLOBAL_NOMINAL_VOLTAGE_VOLTS);
 
-        drivetrain.setRightVoltages(voltages.right);
-        drivetrain.setLeftVoltages(voltages.left);
+        // these are commented out, as the feedforward term causes drivetrain outputs
+        // to oscillate rapidly at +- 3000 volts. This is almost certainly because of
+        // temporary numbers in the Constants class that give ridiculous conversions from
+        // encoder counts to meters
+        // TODO: revise those temporary numbers
+
+        // drivetrain.setRightVoltages(voltages.right);
+        // drivetrain.setLeftVoltages(voltages.left);
+
+        drivetrain.setRightVoltages(mode.execute().right * 12);
+        drivetrain.setLeftVoltages(mode.execute().left * 12);
     }
 }
