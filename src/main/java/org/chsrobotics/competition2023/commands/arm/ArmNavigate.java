@@ -16,94 +16,199 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023.commands.arm;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
+import edu.wpi.first.wpilibj.util.Color8Bit;
+import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import java.util.List;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Arm;
+import org.chsrobotics.competition2023.util.CSpacePackageLoader.CSpacePackage;
 import org.chsrobotics.lib.commands.TimerCommand;
-import org.chsrobotics.lib.math.geometry.Polygon;
+import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
+import org.chsrobotics.lib.math.geometry.CardinalSpline;
 import org.chsrobotics.lib.math.geometry.Vector2D;
-import org.chsrobotics.lib.models.DoubleJointedArmKinematics;
-import org.chsrobotics.lib.trajectory.planning.ConfigurationSpace;
-import org.chsrobotics.lib.trajectory.planning.ConfigurationSpace.ConfigurationSpaceDimension;
+import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.trajectory.planning.Dijkstra;
 import org.chsrobotics.lib.trajectory.planning.Dijkstra.CostFunction;
-import org.chsrobotics.lib.trajectory.planning.LineOfSightPathOptimize;
 import org.chsrobotics.lib.util.Node;
 
 public class ArmNavigate extends ParallelCommandGroup {
-    private final ConfigurationSpace cSpace =
-            new ConfigurationSpace(
-                    new ConfigurationSpaceDimension(-Math.PI, Math.PI, false),
-                    new ConfigurationSpaceDimension(-Math.PI, Math.PI, false),
-                    Polygon.getRectangle(new Vector2D(1, 1), 1, 1));
-
-    private final Node<Vector2D> start = new Node<>(new Vector2D(0, 0));
-
-    private final Node<Vector2D> end = new Node<>(new Vector2D(3, 3));
-
-    private final Node<Vector2D> mid = new Node<>(new Vector2D(2, 0));
-
-    private final Node<Vector2D> other = new Node<Vector2D>(new Vector2D(1.9, 0.6));
-
-    private final Node<Vector2D> tiny = new Node<Vector2D>(new Vector2D(-0.1, -0.1));
-
     private final TimerCommand timerCommand = new TimerCommand();
 
-    private final DoubleJointedArmKinematics kinematics =
-            new DoubleJointedArmKinematics(
-                    Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
-                    Constants.SUBSYSTEM.ARM.DISTAL_LENGTH_METERS);
+    private final CardinalSpline spline;
 
-    public ArmNavigate(Arm arm) {
-        start.addConnection(tiny);
+    private double lastDistal = 0;
+    private double lastLocal = 0;
 
-        tiny.addConnection(mid);
-        tiny.addConnection(other);
+    private final double timescale;
+
+    public ArmNavigate(
+            Arm arm,
+            CSpacePackage pack,
+            double robotRelativeSetpointXMeters,
+            double robotRelativeSetpointYMeters) {
+        var start = new Node<>(new Vector2D(2, 2.5));
+
+        var holdNode = new Node<>(start.getData());
+        var anotherHoldNode = new Node<>(start.getData());
+
+        var mid = new Node<>(new Vector2D(1.5, 0.25));
+
+        var end = new Node<>(new Vector2D(0.6, 0));
+
+        start.addConnection(holdNode);
+
+        holdNode.addConnection(anotherHoldNode);
+
+        anotherHoldNode.addConnection(mid);
 
         mid.addConnection(end);
-        mid.addConnection(other);
 
-        other.addConnection(end);
+        var costFunction =
+                new CostFunction<Vector2D>() {
+                    @Override
+                    public double evaluate(Vector2D a, Vector2D b) {
+                        return Math.abs(a.getX() - b.getX() + a.getY() - b.getY());
+                    }
+                };
 
-        class Function implements CostFunction<Vector2D> {
-            @Override
-            public double evaluate(Vector2D a, Vector2D b) {
-                return Math.abs(a.getX() - b.getX() + a.getY() - b.getY());
-            }
-        }
+        var path =
+                Dijkstra.generatePath(
+                        List.of(holdNode, anotherHoldNode, mid), start, end, costFunction);
 
-        var path = Dijkstra.generatePath(List.of(tiny, other, mid), start, end, new Function());
+        // var improvedPath = LineOfSightPathOptimize.lineOfSightOptimize(cSpace, path);
 
-        System.out.println(path);
-        System.out.println(Dijkstra.getTotalCost(path, new Function()));
+        // improvedPath.add(0, holdNode.getData());
+        // improvedPath.add(0, anotherHoldNode.getData());
 
-        var improvedPath = LineOfSightPathOptimize.lineOfSightOptimize(cSpace, path);
+        double unscaledTime = path.size();
+        double pathLength = Dijkstra.getTotalCost(path, costFunction);
 
-        System.out.println(improvedPath);
-        System.out.println(Dijkstra.getTotalCost(improvedPath, new Function()));
+        if (pathLength == 0) timescale = 1;
+        else
+            timescale =
+                    (Constants.COMMAND.ARM_NAVIGATE.ARM_NAVIGATE_TIME_SCALING * unscaledTime)
+                            / pathLength;
+
+        spline =
+                new CardinalSpline(
+                        Constants.COMMAND.ARM_NAVIGATE.SPLINE_TENSION,
+                        new Rotation3d(),
+                        new Rotation3d(),
+                        path.toArray(new Vector2D[] {}));
+
+        var vis = new Mechanism2d(6, 3);
+
+        vis.getRoot("drivetrainRoot", 2.5, 0.15)
+                .append(
+                        new MechanismLigament2d(
+                                "drivetrain", 1, 0, 10, new Color8Bit(150, 0, 255)));
+
+        var localActual =
+                vis.getRoot(
+                                "root",
+                                3 + Constants.SUBSYSTEM.ARM.ROBOT_TO_ARM.getX(),
+                                0.15 + Constants.SUBSYSTEM.ARM.ROBOT_TO_ARM.getZ())
+                        .append(
+                                new MechanismLigament2d(
+                                        "localActual",
+                                        Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
+                                        arm.getLocalAngleRadians()));
+        var distalActual =
+                localActual.append(
+                        new MechanismLigament2d(
+                                "distalActual",
+                                Constants.SUBSYSTEM.ARM.DISTAL_LENGTH_METERS,
+                                arm.getDistalAngleRadians()));
+
+        var localSetpoint =
+                vis.getRoot("root", 2, 2)
+                        .append(
+                                new MechanismLigament2d(
+                                        "localSetpoint",
+                                        Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
+                                        getLocalSetpointRadians(),
+                                        6,
+                                        new Color8Bit(0, 0, 255)));
+
+        var distalSetpoint =
+                localSetpoint.append(
+                        new MechanismLigament2d(
+                                "distalSetpoint",
+                                Constants.SUBSYSTEM.ARM.DISTAL_LENGTH_METERS,
+                                getDistalSetpointRadians(),
+                                6,
+                                new Color8Bit(0, 0, 255)));
+
+        HighLevelLogger.getInstance().publishSendable("armVis", vis);
+
+        var updateVis =
+                new CommandBase() {
+                    @Override
+                    public void execute() {
+                        localActual.setAngle(new Rotation2d(arm.getLocalAngleRadians()));
+                        distalActual.setAngle(new Rotation2d(arm.getDistalAngleRadians()));
+
+                        localSetpoint.setAngle(new Rotation2d(getLocalSetpointRadians()));
+                        distalSetpoint.setAngle(new Rotation2d(getDistalSetpointRadians()));
+                    }
+                };
+
+        var splineXVelFilter = new DifferentiatingFilter();
+        var splineXAccelFilter = new DifferentiatingFilter();
+
+        var splineYVelFilter = new DifferentiatingFilter();
+        var splineYAccelFilter = new DifferentiatingFilter();
+
+        var diffHandler =
+                new CommandBase() {
+                    @Override
+                    public void execute() {
+                        splineXVelFilter.calculate(getLocalSetpointRadians());
+                        splineXAccelFilter.calculate(splineXVelFilter.getCurrentOutput());
+
+                        splineYVelFilter.calculate(getDistalSetpointRadians());
+                        splineYAccelFilter.calculate(splineYVelFilter.getCurrentOutput());
+                    }
+                };
 
         addCommands(
+                updateVis,
+                diffHandler,
                 timerCommand,
                 new ArmSetpointControl(
-                        arm, this::getLocalSetpointRadians, this::getDistalSetpointRadians));
-    }
-
-    private Vector2D getEESetpoint() {
-        return new Vector2D(1, 1);
+                        arm,
+                        this::getLocalSetpointRadians,
+                        this::getDistalSetpointRadians,
+                        splineXVelFilter::getCurrentOutput,
+                        splineYVelFilter::getCurrentOutput,
+                        splineXAccelFilter::getCurrentOutput,
+                        splineYAccelFilter::getCurrentOutput));
     }
 
     private double getLocalSetpointRadians() {
-        return kinematics
-                .inverseKinematics(getEESetpoint().getX(), getEESetpoint().getY())
-                .firstValue()
-                .localAngle;
+        var splineResult = spline.sample(timescale * timerCommand.getTimeElapsed());
+
+        if (splineResult != null) {
+            lastLocal = splineResult.getX();
+            return splineResult.getX();
+        } else {
+            return lastLocal;
+        }
     }
 
     private double getDistalSetpointRadians() {
-        return kinematics
-                .inverseKinematics(getEESetpoint().getX(), getEESetpoint().getY())
-                .firstValue()
-                .distalAngle;
+        var splineResult = spline.sample(timescale * timerCommand.getTimeElapsed());
+
+        if (splineResult != null) {
+            lastDistal = splineResult.getY();
+            return splineResult.getY();
+        } else {
+            return lastDistal;
+        }
     }
 }

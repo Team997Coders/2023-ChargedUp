@@ -26,18 +26,24 @@ import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.lib.controllers.feedback.PID;
 import org.chsrobotics.lib.math.UtilityMath;
-import org.chsrobotics.lib.models.DoubleJointedArmSim;
+import org.chsrobotics.lib.models.DoubleJointedArmModel;
 import org.chsrobotics.lib.telemetry.Logger;
 
 // TODO: new command loggers
 public class ArmSetpointControl extends CommandBase {
     private final Arm arm;
 
-    private final DoubleSupplier localAngleRadians;
-    private final DoubleSupplier distalAngleRadians;
+    private final DoubleSupplier localAngleLambda;
+    private final DoubleSupplier distalAngleLambda;
 
-    private final DoubleJointedArmSim armSim =
-            new DoubleJointedArmSim(
+    private final DoubleSupplier localVelLamdba;
+    private final DoubleSupplier distalVelLamdba;
+
+    private final DoubleSupplier localAccelLambda;
+    private final DoubleSupplier distalAccelLambda;
+
+    private final DoubleJointedArmModel armSim =
+            new DoubleJointedArmModel(
                     Constants.SUBSYSTEM.ARM.LOCAL_MASS_KG,
                     Constants.SUBSYSTEM.ARM.LOCAL_COM_POSITION_FROM_ROOT_METERS,
                     Constants.SUBSYSTEM.ARM.LOCAL_MOMENT_ABOUT_COM,
@@ -72,11 +78,24 @@ public class ArmSetpointControl extends CommandBase {
     private final PID distalController;
 
     public ArmSetpointControl(
-            Arm arm, DoubleSupplier localAngleRadians, DoubleSupplier distalAngleRadians) {
+            Arm arm,
+            DoubleSupplier localAngleRadians,
+            DoubleSupplier distalAngleRadians,
+            DoubleSupplier localAngularVelocityRadPSec,
+            DoubleSupplier distalAngularVelocityRadPSec,
+            DoubleSupplier localAngularAccelerationRadPSecSquared,
+            DoubleSupplier distalAngularAccelerationRadPSecSquared) {
         addRequirements(arm);
         this.arm = arm;
-        this.localAngleRadians = localAngleRadians;
-        this.distalAngleRadians = distalAngleRadians;
+
+        localAngleLambda = localAngleRadians;
+        distalAngleLambda = distalAngleRadians;
+
+        localVelLamdba = localAngularVelocityRadPSec;
+        distalVelLamdba = distalAngularVelocityRadPSec;
+
+        localAccelLambda = localAngularAccelerationRadPSecSquared;
+        distalAccelLambda = distalAngularAccelerationRadPSecSquared;
 
         localController =
                 new PID(
@@ -97,6 +116,11 @@ public class ArmSetpointControl extends CommandBase {
         this(arm, () -> localAngleRadians, () -> distalAngleRadians);
     }
 
+    public ArmSetpointControl(
+            Arm arm, DoubleSupplier localAngleRadians, DoubleSupplier distalAngleRadians) {
+        this(arm, localAngleRadians, distalAngleRadians, () -> 0, () -> 0, () -> 0, () -> 0);
+    }
+
     @Override
     public void initialize() {
         localController.autoGenerateLogs("localController", subdirString);
@@ -111,8 +135,8 @@ public class ArmSetpointControl extends CommandBase {
         double localAngle = UtilityMath.normalizeAngleRadians(arm.getLocalAngleRadians());
         double distalAngle = UtilityMath.normalizeAngleRadians(arm.getDistalAngleRadians());
 
-        double localSetpoint = UtilityMath.normalizeAngleRadians(localAngleRadians.getAsDouble());
-        double distalSetpoint = UtilityMath.normalizeAngleRadians(distalAngleRadians.getAsDouble());
+        double localSetpoint = UtilityMath.normalizeAngleRadians(localAngleLambda.getAsDouble());
+        double distalSetpoint = UtilityMath.normalizeAngleRadians(distalAngleLambda.getAsDouble());
 
         localController.setSetpoint(localSetpoint);
         distalController.setSetpoint(distalSetpoint);
@@ -121,7 +145,12 @@ public class ArmSetpointControl extends CommandBase {
         double distalFeedbackU = distalController.calculate(distalAngle);
 
         Vector<N2> feedforwardU =
-                armSim.feedforward(VecBuilder.fill(localSetpoint, distalSetpoint));
+                armSim.feedforward(
+                        VecBuilder.fill(localSetpoint, distalSetpoint),
+                        VecBuilder.fill(
+                                localVelLamdba.getAsDouble(), distalVelLamdba.getAsDouble()),
+                        VecBuilder.fill(
+                                localAccelLambda.getAsDouble(), distalAccelLambda.getAsDouble()));
 
         localFeedforwardLogger.update(feedforwardU.get(0, 0));
         distalFeedforwardLogger.update(feedforwardU.get(1, 0));

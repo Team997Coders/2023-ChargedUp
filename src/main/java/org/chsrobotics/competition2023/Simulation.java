@@ -33,7 +33,7 @@ import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
 import org.chsrobotics.competition2023.subsystems.Vision;
 import org.chsrobotics.lib.math.UtilityMath;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
-import org.chsrobotics.lib.models.DoubleJointedArmSim;
+import org.chsrobotics.lib.models.DoubleJointedArmModel;
 
 public class Simulation {
     private static final Simulation instance = new Simulation();
@@ -56,8 +56,8 @@ public class Simulation {
                     Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS,
                     null);
 
-    private final DoubleJointedArmSim armSim =
-            new DoubleJointedArmSim(
+    private final DoubleJointedArmModel armSim =
+            new DoubleJointedArmModel(
                     Constants.SUBSYSTEM.ARM.LOCAL_MASS_KG,
                     Constants.SUBSYSTEM.ARM.LOCAL_COM_POSITION_FROM_ROOT_METERS,
                     Constants.SUBSYSTEM.ARM.LOCAL_MOMENT_ABOUT_COM,

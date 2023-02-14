@@ -93,7 +93,14 @@ public class Robot extends SRobot {
                             controller.rightStickHorizontalAxis(),
                             controller.AButton(),
                             controller.BButton()));
-            scheduler.schedule(new ArmNavigate(Arm.getInstance()));
+
+            scheduler.schedule(
+                    new ArmNavigate(
+                            Arm.getInstance(),
+                            Constants.COMMAND.ARM_NAVIGATE.FREE_NO_INTAKE,
+                            1,
+                            1));
+
         } else if (to == RobotState.AUTONOMOUS) {
             scheduler.schedule(trajectoryFollow);
         }

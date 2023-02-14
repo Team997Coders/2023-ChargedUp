@@ -23,6 +23,10 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.wpilibj.Filesystem;
+import java.io.File;
+import org.chsrobotics.competition2023.util.CSpacePackageLoader;
+import org.chsrobotics.competition2023.util.CSpacePackageLoader.CSpacePackage;
 import org.chsrobotics.lib.controllers.feedback.PID.PIDConstants;
 import org.chsrobotics.lib.util.GearRatioHelper;
 import org.photonvision.PhotonPoseEstimator;
@@ -42,7 +46,7 @@ public final class Constants {
             public static final boolean LEFT_ENCODER_INVERTED = false;
             public static final boolean RIGHT_ENCODER_INVERTED = false;
 
-            public static final GearRatioHelper ENCODER_TO_OUTPUT = new GearRatioHelper(1, 1);
+            public static final GearRatioHelper ENCODER_TO_OUTPUT = new GearRatioHelper(1, 3);
 
             public static final int FRONT_RIGHT_CAN_ID = 4;
             public static final int BACK_RIGHT_CAN_ID = 5;
@@ -58,11 +62,11 @@ public final class Constants {
 
             public static final int SHIFTER_SOLENOID_CHANNEL = 3;
 
-            public static final GearRatioHelper SLOW_GEAR_RATIO = new GearRatioHelper(1, 1);
+            public static final GearRatioHelper SLOW_GEAR_RATIO = new GearRatioHelper(1, 22.67);
 
-            public static final GearRatioHelper FAST_GEAR_RATIO = new GearRatioHelper(2, 1);
+            public static final GearRatioHelper FAST_GEAR_RATIO = new GearRatioHelper(1, 7.56);
 
-            public static final double WHEEL_RADIUS_METERS = 0.2;
+            public static final double WHEEL_RADIUS_METERS = 0.152;
 
             public static final double TRACKWIDTH_METERS = 1;
 
@@ -158,13 +162,13 @@ public final class Constants {
             public static final int LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 0;
 
             public static final GearRatioHelper DISTAL_POTENTIOMETER_CONVERSION_HELPER =
-                    new GearRatioHelper(1, 1);
+                    new GearRatioHelper(1, 2);
 
             public static final GearRatioHelper LOCAL_POTENTIOMETER_CONVERSION_HELPER =
-                    new GearRatioHelper(1, 1);
+                    new GearRatioHelper(1, 2);
 
             public static final GearRatioHelper DISTAL_MOTOR_CONVERSION_HELPER =
-                    new GearRatioHelper(1, 100);
+                    new GearRatioHelper(1, 200);
 
             public static final GearRatioHelper LOCAL_MOTORS_CONVERSION_HELPER =
                     new GearRatioHelper(1, 200);
@@ -179,41 +183,54 @@ public final class Constants {
 
             public static final boolean RIGHT_LOCAL_NEO_INVERTED = false;
 
-            public static final double LOCAL_COM_POSITION_FROM_ROOT_METERS = 0.5;
+            public static final double LOCAL_COM_POSITION_FROM_ROOT_METERS = 0.26;
 
-            public static final double LOCAL_MASS_KG = 2;
+            public static final double LOCAL_MASS_KG = 3.16;
 
-            public static final double LOCAL_LENGTH_METERS = 1;
+            public static final double LOCAL_LENGTH_METERS = 0.86;
 
-            public static final double LOCAL_MOMENT_ABOUT_COM = 0.5;
+            public static final double LOCAL_MOMENT_ABOUT_COM = 1.91;
 
-            public static final double DISTAL_COM_POSITION_FROM_ROOT_METERS = 0.5;
+            public static final double DISTAL_COM_POSITION_FROM_ROOT_METERS = 0.45;
 
-            public static final double DISTAL_MASS_KG = 2;
+            public static final double DISTAL_MASS_KG = 1.9;
 
-            public static final double DISTAL_LENGTH_METERS = 1;
+            public static final double DISTAL_LENGTH_METERS = 0.81;
 
-            public static final double DISTAL_MOMENT_ABOUT_COM = 0.5;
+            public static final double DISTAL_MOMENT_ABOUT_COM = 1.65;
 
             public static final IdleMode IDLE_MODE = IdleMode.kBrake;
+
+            public static final Translation3d ROBOT_TO_ARM = new Translation3d(0.225, 0, 0.21);
         }
     }
 
     public static final class COMMAND {
         public static final class ARM_SETPOINT {
             public static final PIDConstants LOCAL_CONTROLLER_CONSTANTS =
-                    new PIDConstants(12, 0, 0);
+                    new PIDConstants(24, 0, 0);
 
             public static final int LOCAL_CONTROLLER_INTEGRATION_WINDOW = -1;
 
             public static final PIDConstants DISTAL_CONTROLLER_CONSTANTS =
-                    new PIDConstants(12, 0, 0);
+                    new PIDConstants(36, 0, 0);
 
             public static final int DISTAL_CONTROLLER_INTEGRATION_WINDOW = -1;
         }
 
         public static final class ARM_CARTESIAN_CONTROL {
             public static final double MAX_SETPOINT_VELOCITY_METERS_PER_SECOND = 0.5;
+        }
+
+        public static final class ARM_NAVIGATE {
+            public static final double ARM_NAVIGATE_TIME_SCALING = 1;
+
+            public static final double SPLINE_TENSION = 0.4;
+
+            // TODO: figure out serialization of nodes-- might need lib changes
+            public static final CSpacePackage FREE_NO_INTAKE =
+                    CSpacePackageLoader.loadPackage(
+                            new File(Filesystem.getDeployDirectory(), "/cspace/freeNoIntake.json"));
         }
 
         public static final class TRAJECTORY_FOLLOWING {

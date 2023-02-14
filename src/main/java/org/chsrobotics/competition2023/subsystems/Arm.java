@@ -18,10 +18,7 @@ package org.chsrobotics.competition2023.subsystems;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
-import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
-import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.Robot;
@@ -113,23 +110,6 @@ public class Arm implements Subsystem {
 
     private double simLocalAngle = 0;
     private double simDistalAngle = 0;
-
-    private final Mechanism2d vis = new Mechanism2d(4, 4);
-
-    private final MechanismLigament2d local =
-            vis.getRoot("root", 2, 2)
-                    .append(
-                            new MechanismLigament2d(
-                                    "local",
-                                    Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
-                                    getLocalAngleRadians()));
-
-    private final MechanismLigament2d distal =
-            local.append(
-                    new MechanismLigament2d(
-                            "distal",
-                            Constants.SUBSYSTEM.ARM.DISTAL_LENGTH_METERS,
-                            getDistalAngleRadians()));
 
     private Arm() {
         register();
@@ -249,12 +229,6 @@ public class Arm implements Subsystem {
                     UtilityMath.smallestAngleRadiansBetween(
                             getLocalAngleRadians(), previousLocalPosition);
         }
-
-        local.setAngle(new Rotation2d(getLocalAngleRadians()));
-
-        distal.setAngle(new Rotation2d(getDistalAngleRadians()));
-
-        HighLevelLogger.getInstance().publishSendable("armVis", vis);
 
         distalVelocity = distalDeltaPosition / 0.02;
         localVelocity = localDeltaPostion / 0.02;
