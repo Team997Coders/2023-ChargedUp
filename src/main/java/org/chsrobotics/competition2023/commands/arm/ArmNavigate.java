@@ -17,29 +17,26 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.commands.arm;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import java.util.List;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.util.CSpacePackageLoader.CSpacePackage;
 import org.chsrobotics.lib.commands.TimerCommand;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
-import org.chsrobotics.lib.math.geometry.CardinalSpline;
 import org.chsrobotics.lib.math.geometry.Vector2D;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.trajectory.planning.Dijkstra;
 import org.chsrobotics.lib.trajectory.planning.Dijkstra.CostFunction;
-import org.chsrobotics.lib.util.Node;
+import org.chsrobotics.lib.util.NodeGraph;
 
 public class ArmNavigate extends ParallelCommandGroup {
     private final TimerCommand timerCommand = new TimerCommand();
 
-    private final CardinalSpline spline;
+    // private final CardinalSpline spline;
 
     private double lastDistal = 0;
     private double lastLocal = 0;
@@ -51,22 +48,21 @@ public class ArmNavigate extends ParallelCommandGroup {
             CSpacePackage pack,
             double robotRelativeSetpointXMeters,
             double robotRelativeSetpointYMeters) {
-        var start = new Node<>(new Vector2D(2, 2.5));
+        NodeGraph<Vector2D> nodeGraph = new NodeGraph<>();
 
-        var holdNode = new Node<>(start.getData());
-        var anotherHoldNode = new Node<>(start.getData());
+        var start = nodeGraph.createNode(new Vector2D(2, 2.5));
 
-        var mid = new Node<>(new Vector2D(1.5, 0.25));
+        var holdNode = nodeGraph.createNode(start.getData());
+        var anotherHoldNode = nodeGraph.createNode(start.getData());
 
-        var end = new Node<>(new Vector2D(0.6, 0));
+        var mid = nodeGraph.createNode(new Vector2D(1.5, 0.25));
 
-        start.addConnection(holdNode);
+        var end = nodeGraph.createNode(new Vector2D(0.6, 0));
 
-        holdNode.addConnection(anotherHoldNode);
-
-        anotherHoldNode.addConnection(mid);
-
-        mid.addConnection(end);
+        nodeGraph.connectNodes(start, holdNode);
+        nodeGraph.connectNodes(holdNode, anotherHoldNode);
+        nodeGraph.connectNodes(anotherHoldNode, mid);
+        nodeGraph.connectNodes(mid, end);
 
         var costFunction =
                 new CostFunction<Vector2D>() {
@@ -76,9 +72,7 @@ public class ArmNavigate extends ParallelCommandGroup {
                     }
                 };
 
-        var path =
-                Dijkstra.generatePath(
-                        List.of(holdNode, anotherHoldNode, mid), start, end, costFunction);
+        var path = Dijkstra.generatePath(nodeGraph, start, end, costFunction);
 
         // var improvedPath = LineOfSightPathOptimize.lineOfSightOptimize(cSpace, path);
 
@@ -94,12 +88,12 @@ public class ArmNavigate extends ParallelCommandGroup {
                     (Constants.COMMAND.ARM_NAVIGATE.ARM_NAVIGATE_TIME_SCALING * unscaledTime)
                             / pathLength;
 
-        spline =
-                new CardinalSpline(
-                        Constants.COMMAND.ARM_NAVIGATE.SPLINE_TENSION,
-                        new Rotation3d(),
-                        new Rotation3d(),
-                        path.toArray(new Vector2D[] {}));
+        // spline =
+        //        new CardinalSpline(
+        //                Constants.COMMAND.ARM_NAVIGATE.SPLINE_TENSION,
+        //                new Rotation3d(),
+        //                new Rotation3d(),
+        //                path.toArray(new Vector2D[] {}));
 
         var vis = new Mechanism2d(6, 3);
 
@@ -191,24 +185,27 @@ public class ArmNavigate extends ParallelCommandGroup {
     }
 
     private double getLocalSetpointRadians() {
-        var splineResult = spline.sample(timescale * timerCommand.getTimeElapsed());
+        // var splineResult = spline.sample(timescale * timerCommand.getTimeElapsed());
 
-        if (splineResult != null) {
-            lastLocal = splineResult.getX();
-            return splineResult.getX();
-        } else {
-            return lastLocal;
-        }
+        // if (splineResult != null) {
+        //     lastLocal = splineResult.getX();
+        //     return splineResult.getX();
+        // } else {
+        //     return lastLocal;
+        // }
+        return 0;
     }
 
     private double getDistalSetpointRadians() {
-        var splineResult = spline.sample(timescale * timerCommand.getTimeElapsed());
+        // var splineResult = spline.sample(timescale * timerCommand.getTimeElapsed());
 
-        if (splineResult != null) {
-            lastDistal = splineResult.getY();
-            return splineResult.getY();
-        } else {
-            return lastDistal;
-        }
+        // if (splineResult != null) {
+        //     lastDistal = splineResult.getY();
+        //     return splineResult.getY();
+        // } else {
+        //     return lastDistal;
+        // }
+
+        return 0;
     }
 }

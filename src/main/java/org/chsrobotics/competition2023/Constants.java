@@ -112,10 +112,12 @@ public final class Constants {
             public static final int AT_CAMERAS_VERTICAL_RESOLUTION_PX = 540;
 
             public static final Transform3d ROBOT_TO_AT_CAMERA_A =
-                    new Transform3d(new Translation3d(1, 1, 1), new Rotation3d());
+                    new Transform3d(new Translation3d(0.262, -0.146, 0.257), new Rotation3d());
 
             public static final Transform3d ROBOT_TO_AT_CAMERA_B =
-                    new Transform3d(new Translation3d(1, 1, 1), new Rotation3d(0, 0, Math.PI));
+                    new Transform3d(
+                            new Translation3d(-0.039, -0.034, 0.311),
+                            new Rotation3d(0, 0, Math.PI));
 
             public static final double AT_CAMERAS_SIMULATION_MIN_TARGET_AREA = 20;
         }
@@ -242,12 +244,12 @@ public final class Constants {
         }
 
         public static final class TELEOP_DRIVE {
-            public static final double FAST_MAX_LINEAR_ACCEL_M_P_SEC_SQUARED = 1;
-            public static final double FAST_MAX_ANGULAR_ACCEL_RADS_P_SEC_SQUARED = 1;
+            public static final double FAST_MAX_LINEAR_ACCEL_M_P_SEC_SQUARED = 5;
+            public static final double FAST_MAX_ANGULAR_ACCEL_RADS_P_SEC_SQUARED = 5;
 
-            public static final double SLOW_MAX_LINEAR_ACCEL_M_P_SEC_SQUARED = 1;
+            public static final double SLOW_MAX_LINEAR_ACCEL_M_P_SEC_SQUARED = 3;
 
-            public static final double SLOW_MAX_ANGULAR_ACCEL_RAD_P_SEC_SQUARED = 1;
+            public static final double SLOW_MAX_ANGULAR_ACCEL_RAD_P_SEC_SQUARED = 3;
         }
     }
 }

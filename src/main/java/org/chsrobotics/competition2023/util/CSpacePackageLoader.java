@@ -20,17 +20,16 @@ import com.google.gson.Gson;
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
-import java.util.List;
 import org.chsrobotics.lib.math.geometry.Vector2D;
 import org.chsrobotics.lib.trajectory.planning.ConfigurationSpace;
-import org.chsrobotics.lib.util.Node;
+import org.chsrobotics.lib.util.NodeGraph;
 
 public class CSpacePackageLoader {
     public static class CSpacePackage {
         public final ConfigurationSpace cSpace;
-        public final List<Node<Vector2D>> nodes;
+        public final NodeGraph<Vector2D> nodes;
 
-        public CSpacePackage(ConfigurationSpace cSpace, List<Node<Vector2D>> nodes) {
+        public CSpacePackage(ConfigurationSpace cSpace, NodeGraph<Vector2D> nodes) {
             this.cSpace = cSpace;
             this.nodes = nodes;
         }
