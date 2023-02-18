@@ -229,7 +229,6 @@ public final class Constants {
 
             public static final double SPLINE_TENSION = 0.4;
 
-            // TODO: figure out serialization of nodes-- might need lib changes
             public static final CSpacePackage FREE_NO_INTAKE =
                     CSpacePackageLoader.loadPackage(
                             new File(Filesystem.getDeployDirectory(), "/cspace/freeNoIntake.json"));

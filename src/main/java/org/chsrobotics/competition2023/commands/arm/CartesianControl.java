@@ -86,30 +86,34 @@ public class CartesianControl extends ParallelCommandGroup {
     }
 
     private double getDesiredLocalAngleRadians() {
-        var armConfigs =
-                kinematics.inverseKinematics(
-                        initialX + joystickHandler.totalDeltaX,
-                        initialY + joystickHandler.totalDeltaY);
+        double totalX = initialX + joystickHandler.totalDeltaX;
+        double totalY = initialY + joystickHandler.totalDeltaY;
+
+        var armConfigs = kinematics.inverseKinematics(totalX, totalY);
 
         if (armConfigs.firstValue() == null) {
-            return lastValidLocalAngle;
-        } else { // have to always use the first solution so that our two sources of angles agree
+        } else if (totalX >= 0) {
+            lastValidLocalAngle = armConfigs.secondValue().localAngle;
+        } else {
             lastValidLocalAngle = armConfigs.firstValue().localAngle;
-            return lastValidLocalAngle;
         }
+
+        return lastValidLocalAngle;
     }
 
     private double getDesiredDistalAngleRadians() {
-        var armConfigs =
-                kinematics.inverseKinematics(
-                        initialX + joystickHandler.totalDeltaX,
-                        initialY + joystickHandler.totalDeltaY);
+        double totalX = initialX + joystickHandler.totalDeltaX;
+        double totalY = initialY + joystickHandler.totalDeltaY;
+
+        var armConfigs = kinematics.inverseKinematics(totalX, totalY);
 
         if (armConfigs.firstValue() == null) {
-            return lastValidDistalAngle;
-        } else { // have to always use the first solution so that our two sources of angles agree
+        } else if (totalX >= 0) {
+            lastValidDistalAngle = armConfigs.secondValue().distalAngle;
+        } else {
             lastValidDistalAngle = armConfigs.firstValue().distalAngle;
-            return lastValidDistalAngle;
         }
+
+        return lastValidDistalAngle;
     }
 }
