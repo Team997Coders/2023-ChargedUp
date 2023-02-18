@@ -18,6 +18,7 @@ package org.chsrobotics.competition2023.subsystems;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
@@ -67,25 +68,51 @@ public class Arm implements Subsystem {
     private final Logger<Double> localEncoderPositionLogger =
             factory.getLogger("localEncoderPosition_radians");
 
+    // TODO: remove temporary degree units loggers
+
+    private final Logger<Double> tempLocalEncoderPositionDegreesLogger =
+            factory.getLogger("localEncoderPosition_degrees");
+    private final Logger<Double> tempDistalEncoderPositionDegreesLogger =
+            factory.getLogger("distalEncoderPosition_degrees");
+
     private final Logger<Double> distalPotPositionLogger =
             factory.getLogger("distalPotPosition_radians");
     private final Logger<Double> localPotPositionLogger =
             factory.getLogger("localPotPosition_radians");
+
+    private final Logger<Double> tempDistalPotPositionDegreesLogger =
+            factory.getLogger("distalPotPosition_degrees");
+    private final Logger<Double> tempLocalPotPositionDegreesLogger =
+            factory.getLogger("localPotPosition_degrees");
 
     private final Logger<Double> distalFusedPositionLogger =
             factory.getLogger("distalFusedPosition_radians");
     private final Logger<Double> localFusedPositionLogger =
             factory.getLogger("localFusedPosition_radians");
 
+    private final Logger<Double> tempDistalFusedDegreesLogger =
+            factory.getLogger("distalFusedPosition_degrees");
+    private final Logger<Double> tempLocalFusedDegreesLogger =
+            factory.getLogger("localFusedPosition_degrees");
+
     private final Logger<Double> distalVelocityLogger =
             factory.getLogger("distalVelocity_radiansPerSecond");
     private final Logger<Double> localVelocityLogger =
             factory.getLogger("localVelocity_radiansPerSecond");
 
+    private final Logger<Double> tempDistalVelocityDegreesLogger =
+            factory.getLogger("distalVelocity_dps");
+    private final Logger<Double> tempLocalVelocityDegreesLogger =
+            factory.getLogger("localVelocity_dps");
+
     private final Logger<Double> distalAccelLogger =
             factory.getLogger("distalAccel_radiansPerSecondSquared");
     private final Logger<Double> localAccelLogger =
             factory.getLogger("localAccel_radiansPerSecondSqaured");
+
+    private final Logger<Double> tempDistalAccelDegreesLogger =
+            factory.getLogger("distalAccel_dps2");
+    private final Logger<Double> tempLocalAccelDegreesLogger = factory.getLogger("localAccel_dps2");
 
     private final Logger<Double> distalNeoCurrentLogger =
             factory.getLogger("distalNeoCurrent_amps");
@@ -260,6 +287,27 @@ public class Arm implements Subsystem {
         distalNeoTempLogger.update(distalNEO.getMotorTemperature());
         leftLocalNEOTempLogger.update(leftLocalNEO.getMotorTemperature());
         rightLocalNEOTempLogger.update(rightLocalNEO.getMotorTemperature());
+
+        tempLocalEncoderPositionDegreesLogger.update(
+                Units.radiansToDegrees(getEncoderLocalAngle()));
+        tempDistalEncoderPositionDegreesLogger.update(
+                Units.radiansToDegrees(getEncoderDistalAngle()));
+
+        tempLocalPotPositionDegreesLogger.update(Units.radiansToDegrees(getPotLocalAngle()));
+        tempDistalPotPositionDegreesLogger.update(Units.radiansToDegrees(getPotDistalAngle()));
+
+        tempLocalFusedDegreesLogger.update(Units.radiansToDegrees(getLocalAngleRadians()));
+        tempDistalFusedDegreesLogger.update(Units.radiansToDegrees(getDistalAngleRadians()));
+
+        tempLocalVelocityDegreesLogger.update(
+                Units.radiansToDegrees(getLocalVelociyRadiansPerSecond()));
+        tempDistalVelocityDegreesLogger.update(
+                Units.radiansToDegrees(getDistalVelocityRadiansPerSecond()));
+
+        tempLocalAccelDegreesLogger.update(
+                Units.radiansToDegrees(getLocalAccelRadiansPerSecondSquared()));
+        tempDistalAccelDegreesLogger.update(
+                Units.radiansToDegrees(getDistalAccelRadiansPerSecondSquared()));
     }
 
     public static Arm getInstance() {
