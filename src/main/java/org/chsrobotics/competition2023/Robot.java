@@ -22,9 +22,13 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import org.chsrobotics.competition2023.commands.SimpleArmTest;
+import org.chsrobotics.competition2023.commands.SimpleGrabberTest;
 import org.chsrobotics.competition2023.commands.TeleopDrive;
 import org.chsrobotics.competition2023.commands.TrajectoryFollow;
+import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
+import org.chsrobotics.competition2023.subsystems.Grabber;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
 import org.chsrobotics.lib.input.JoystickAxis;
 import org.chsrobotics.lib.input.JoystickButton;
@@ -62,6 +66,11 @@ public class Robot extends SRobot {
             new VirtualJoystickButton(controller.rightTriggerAxis(), 0.1, 1, false);
     private final JoystickButton brake = controller.BButton();
 
+    private final JoystickAxis localVoltage = controller.rightStickVerticalAxis();
+    private final JoystickAxis distalVoltage = controller.leftStickHorizontalAxis();
+
+    private final JoystickButton grabberButton = controller.XButton();
+
     @Override
     public void stateTransition(RobotState from, RobotState to) {
         if (from == RobotState.NONE && to == RobotState.DISABLED) {
@@ -79,6 +88,9 @@ public class Robot extends SRobot {
             driveRot.setInverted(true);
             driveRot.addDeadband(0.1);
             driveLin.addDeadband(0.1);
+
+            localVoltage.addDeadband(0.1);
+            distalVoltage.addDeadband(0.1);
 
             uptimer.reset();
             uptimer.start();
@@ -98,6 +110,12 @@ public class Robot extends SRobot {
             HighLevelLogger.getInstance().logMessage("Uptime (s): " + uptimer.get());
         } else if (to == RobotState.TELEOPERATED) {
             scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift, brake));
+
+            scheduler.schedule(new SimpleGrabberTest(Grabber.getInstance(), grabberButton));
+
+            scheduler.schedule(
+                    new SimpleArmTest(Arm.getInstance(), distalVoltage, localVoltage, 3));
+
         } else if (to == RobotState.AUTONOMOUS) {
             scheduler.schedule(trajectoryFollow);
         }

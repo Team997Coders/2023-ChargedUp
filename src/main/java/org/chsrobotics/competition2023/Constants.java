@@ -148,25 +148,27 @@ public final class Constants {
 
             public static final int RIGHT_LOCAL_NEO_CAN_ID = 8;
 
-            public static final int DISTAL_POTENTIOMETER_ANALOG_CHANNEL = 1;
+            public static final int DISTAL_POTENTIOMETER_ANALOG_CHANNEL = 0;
 
-            public static final int LOCAL_POTENTIOMETER_ANALOG_CHANNEL = 2;
+            public static final int LOCAL_POTENTIOMETER_ANALOG_CHANNEL = 1;
 
-            public static final int DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 0;
+            public static final double DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 0;
 
-            public static final int LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 0;
+            public static final double LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 0;
+
+            public static final double POTENTIOMETER_RANGE_RADIANS = 6 * Math.PI;
 
             public static final GearRatioHelper DISTAL_POTENTIOMETER_CONVERSION_HELPER =
-                    new GearRatioHelper(1, 1);
+                    new GearRatioHelper(1, 2);
 
             public static final GearRatioHelper LOCAL_POTENTIOMETER_CONVERSION_HELPER =
-                    new GearRatioHelper(1, 1);
+                    new GearRatioHelper(1, 2);
 
             public static final GearRatioHelper DISTAL_MOTOR_CONVERSION_HELPER =
-                    new GearRatioHelper(1, 1);
+                    new GearRatioHelper(1, 200);
 
             public static final GearRatioHelper LOCAL_MOTORS_CONVERSION_HELPER =
-                    new GearRatioHelper(1, 1);
+                    new GearRatioHelper(1, 200);
 
             public static final double LOCAL_ANGLE_SMOOTHING_RESPONSE_CONSTANT = 0.25;
 
