@@ -17,8 +17,11 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.Robot;
 import org.chsrobotics.lib.math.UtilityMath;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
@@ -112,6 +115,10 @@ public class InertialMeasurement implements Subsystem {
     private double simYAccel = 0;
     private double simZAccel = 0;
 
+    private Rotation3d rotation = new Rotation3d();
+
+    private Translation3d accel = new Translation3d();
+
     private InertialMeasurement() {
         register();
 
@@ -192,7 +199,7 @@ public class InertialMeasurement implements Subsystem {
     }
 
     public double getPitchRadians() {
-        return Robot.isReal() ? headingDegreesToAngleRadians(navX.getPitch()) : simPitchRadians;
+        return rotation.getY();
     }
 
     public double getPitchAngularVelocityRadiansPerSecond() {
@@ -208,7 +215,7 @@ public class InertialMeasurement implements Subsystem {
     }
 
     public double getYawRadians() {
-        return Robot.isReal() ? headingDegreesToAngleRadians(navX.getYaw()) : simYawRadians;
+        return rotation.getZ();
     }
 
     public double getYawAngularVelocityRadiansPerSecond() {
@@ -224,7 +231,7 @@ public class InertialMeasurement implements Subsystem {
     }
 
     public double getRollRadians() {
-        return Robot.isReal() ? headingDegreesToAngleRadians(navX.getRoll()) : simRollRadians;
+        return rotation.getX();
     }
 
     public double getRollAngularVelocityRadiansPerSecond() {
@@ -240,7 +247,7 @@ public class InertialMeasurement implements Subsystem {
     }
 
     public double getXAccelerationMetersPerSecondSquared() {
-        return Robot.isReal() ? gToMetersPerSecondSquared(navX.getRawAccelX()) : simXAccel;
+        return accel.getX();
     }
 
     public double getXJerkMetersPerSecondCubed() {
@@ -256,7 +263,7 @@ public class InertialMeasurement implements Subsystem {
     }
 
     public double getYAccelerationMetersPerSecondSquared() {
-        return Robot.isReal() ? gToMetersPerSecondSquared(navX.getRawAccelY()) : simYAccel;
+        return accel.getY();
     }
 
     public double getYJerkMetersPerSecondCubed() {
@@ -272,7 +279,7 @@ public class InertialMeasurement implements Subsystem {
     }
 
     public double getZAccelerationMetersPerSecondSquared() {
-        return Robot.isReal() ? gToMetersPerSecondSquared(navX.getRawAccelZ()) : simZAccel;
+        return accel.getZ();
     }
 
     public double getZJerkMetersPerSecondCubed() {
@@ -297,6 +304,31 @@ public class InertialMeasurement implements Subsystem {
 
     @Override
     public void periodic() {
+        double relPitch =
+                Robot.isReal() ? headingDegreesToAngleRadians(navX.getPitch()) : simPitchRadians;
+
+        double relRoll =
+                Robot.isReal() ? headingDegreesToAngleRadians(navX.getRoll()) : simRollRadians;
+
+        double relYaw =
+                Robot.isReal() ? headingDegreesToAngleRadians(navX.getYaw()) : simYawRadians;
+
+        Rotation3d relRot = new Rotation3d(relRoll, relPitch, relYaw);
+
+        rotation = relRot.plus(Constants.SUBSYSTEM.INERTIAL_MEASUREMENT.ROBOT_TO_NAVX);
+
+        double relX = Robot.isReal() ? gToMetersPerSecondSquared(navX.getRawAccelX()) : simXAccel;
+
+        double relY = Robot.isReal() ? gToMetersPerSecondSquared(navX.getRawAccelY()) : simYAccel;
+
+        double relZ = Robot.isReal() ? gToMetersPerSecondSquared(navX.getRawAccelZ()) : simZAccel;
+
+        Translation3d accelsAsTranslation = new Translation3d(relX, relY, relZ);
+
+        accel =
+                accelsAsTranslation.rotateBy(
+                        Constants.SUBSYSTEM.INERTIAL_MEASUREMENT.ROBOT_TO_NAVX);
+
         isCalibratingLogger.update(isCalibrating());
         hasCalibratedLogger.update(hasCalibrated());
 
