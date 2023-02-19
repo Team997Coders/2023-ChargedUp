@@ -138,7 +138,7 @@ public final class Constants {
         }
 
         public static final class INERTIAL_MEASUREMENT {
-            public static final Rotation3d ROBOT_TO_NAVX = new Rotation3d(0, Math.PI / 2, 0);
+            public static final Rotation3d ROBOT_TO_NAVX = new Rotation3d(0, Math.PI / 4, 0);
         }
 
         public static final class POWER_DISTRIBUTION_HUB {}

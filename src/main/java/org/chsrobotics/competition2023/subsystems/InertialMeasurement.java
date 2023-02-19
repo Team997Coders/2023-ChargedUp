@@ -17,8 +17,8 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
-import edu.wpi.first.math.geometry.Quaternion;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
@@ -117,7 +117,7 @@ public class InertialMeasurement implements Subsystem {
 
     private Rotation3d rotation = new Rotation3d();
 
-    private Quaternion accel = new Quaternion();
+    private Translation3d accel = new Translation3d();
 
     private InertialMeasurement() {
         register();
@@ -323,12 +323,11 @@ public class InertialMeasurement implements Subsystem {
 
         double relZ = Robot.isReal() ? gToMetersPerSecondSquared(navX.getRawAccelZ()) : simZAccel;
 
-        Quaternion accelsAsQuaternion = new Quaternion(0, relX, relY, relZ);
+        Translation3d accelsAsTranslation = new Translation3d(relX, relY, relZ);
 
         accel =
-                new Rotation3d(accelsAsQuaternion)
-                        .plus(Constants.SUBSYSTEM.INERTIAL_MEASUREMENT.ROBOT_TO_NAVX)
-                        .getQuaternion();
+                accelsAsTranslation.rotateBy(
+                        Constants.SUBSYSTEM.INERTIAL_MEASUREMENT.ROBOT_TO_NAVX);
 
         isCalibratingLogger.update(isCalibrating());
         hasCalibratedLogger.update(hasCalibrated());
