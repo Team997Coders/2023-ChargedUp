@@ -52,7 +52,8 @@ public class Robot extends SRobot {
 
     private static final Timer uptimer = new Timer();
 
-    private static final XboxController controller = new XboxController(0);
+    private static final XboxController driverController = new XboxController(0);
+    private static final XboxController operatorController = new XboxController(1);
 
     private final Trajectory trajectory =
             PathPlanner.loadPath("testTraj", new PathConstraints(3, 4));
@@ -60,16 +61,16 @@ public class Robot extends SRobot {
     private final TrajectoryFollow trajectoryFollow =
             new TrajectoryFollow(drivetrain, trajectory, true);
 
-    private final JoystickAxis driveLin = controller.leftStickVerticalAxis();
-    private final JoystickAxis driveRot = controller.rightStickHorizontalAxis();
+    private final JoystickAxis driveLin = driverController.leftStickVerticalAxis();
+    private final JoystickAxis driveRot = driverController.rightStickHorizontalAxis();
     private final JoystickButton shift =
-            new VirtualJoystickButton(controller.rightTriggerAxis(), 0.1, 1, false);
-    private final JoystickButton brake = controller.BButton();
+            new VirtualJoystickButton(driverController.rightTriggerAxis(), 0.1, 1, false);
+    private final JoystickButton brake = driverController.BButton();
 
-    private final JoystickAxis localVoltage = controller.rightStickVerticalAxis();
-    private final JoystickAxis distalVoltage = controller.leftStickHorizontalAxis();
+    private final JoystickAxis localVoltage = operatorController.rightStickHorizontalAxis();
+    private final JoystickAxis distalVoltage = operatorController.leftStickHorizontalAxis();
 
-    private final JoystickButton grabberButton = controller.XButton();
+    private final JoystickButton grabberButton = operatorController.XButton();
 
     @Override
     public void stateTransition(RobotState from, RobotState to) {
@@ -86,8 +87,10 @@ public class Robot extends SRobot {
             Config.publishChoosers();
 
             driveRot.setInverted(true);
-            driveRot.addDeadband(0.1);
-            driveLin.addDeadband(0.1);
+            driveLin.setInverted(false);
+
+            driveRot.addDeadband(0.15);
+            driveLin.addDeadband(0.15);
 
             localVoltage.addDeadband(0.1);
             distalVoltage.addDeadband(0.1);
@@ -114,7 +117,7 @@ public class Robot extends SRobot {
             scheduler.schedule(new SimpleGrabberTest(Grabber.getInstance(), grabberButton));
 
             scheduler.schedule(
-                    new SimpleArmTest(Arm.getInstance(), distalVoltage, localVoltage, 3));
+                    new SimpleArmTest(Arm.getInstance(), distalVoltage, localVoltage, 6));
 
         } else if (to == RobotState.AUTONOMOUS) {
             scheduler.schedule(trajectoryFollow);
