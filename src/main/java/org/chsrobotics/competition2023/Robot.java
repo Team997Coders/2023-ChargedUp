@@ -22,8 +22,8 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import org.chsrobotics.competition2023.commands.TeleopDrive;
-import org.chsrobotics.competition2023.commands.TrajectoryFollow;
+import org.chsrobotics.competition2023.commands.drivetrain.TeleopDrive;
+import org.chsrobotics.competition2023.commands.drivetrain.TrajectoryFollow;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
 import org.chsrobotics.lib.input.JoystickAxis;
@@ -60,7 +60,6 @@ public class Robot extends SRobot {
     private final JoystickAxis driveRot = controller.rightStickHorizontalAxis();
     private final JoystickButton shift =
             new VirtualJoystickButton(controller.rightTriggerAxis(), 0.1, 1, false);
-    private final JoystickButton brake = controller.BButton();
 
     @Override
     public void stateTransition(RobotState from, RobotState to) {
@@ -97,7 +96,7 @@ public class Robot extends SRobot {
             HighLevelLogger.getInstance().logMessage("Loop cycles: " + cycleCounter);
             HighLevelLogger.getInstance().logMessage("Uptime (s): " + uptimer.get());
         } else if (to == RobotState.TELEOPERATED) {
-            scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift, brake));
+            scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift));
         } else if (to == RobotState.AUTONOMOUS) {
             scheduler.schedule(trajectoryFollow);
         }

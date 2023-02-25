@@ -201,5 +201,19 @@ public final class Constants {
 
             public static final double SLOW_MAX_ANGULAR_ACCEL_RAD_P_SEC_SQUARED = 1;
         }
+
+        public static final class AUTO_BALANCE {
+            public static final double KP = 16.5;
+            public static final double KI = 0;
+            public static final double KD = 0;
+        }
+
+        public static final class GO_OVER_RAMP {
+            public static final double BALANCED_TOLERANCE_DEGREES = 2.5;
+
+            public static final double FALLING_RATE_TOLERANCE_DEGREES_PER_SECOND = 5;
+
+            public static final double CONTROL_INPUT_VOLTS = 4;
+        }
     }
 }

@@ -14,7 +14,7 @@ See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. 
 If not, see <https://www.gnu.org/licenses/>.
 */
-package org.chsrobotics.competition2023.commands;
+package org.chsrobotics.competition2023.commands.drivetrain;
 
 import edu.wpi.first.math.controller.DifferentialDriveFeedforward;
 import edu.wpi.first.math.controller.RamseteController;

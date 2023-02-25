@@ -14,7 +14,7 @@ See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. 
 If not, see <https://www.gnu.org/licenses/>.
 */
-package org.chsrobotics.competition2023.commands;
+package org.chsrobotics.competition2023.commands.drivetrain;
 
 import edu.wpi.first.math.controller.DifferentialDriveAccelerationLimiter;
 import edu.wpi.first.wpilibj2.command.CommandBase;
@@ -50,14 +50,12 @@ public class TeleopDrive extends CommandBase {
     private final JoystickAxis axisB;
 
     private final JoystickButton shiftButton;
-    private final JoystickButton brakeModeButton;
 
     public TeleopDrive(
             Drivetrain drivetrain,
             JoystickAxis axisA,
             JoystickAxis axisB,
-            JoystickButton shiftButton,
-            JoystickButton brakeModeButton) {
+            JoystickButton shiftButton) {
         addRequirements(drivetrain);
         this.drivetrain = drivetrain;
 
@@ -65,14 +63,11 @@ public class TeleopDrive extends CommandBase {
         this.axisB = axisB;
 
         this.shiftButton = shiftButton;
-        this.brakeModeButton = brakeModeButton;
     }
 
     @Override
     public void execute() {
         drivetrain.setShifters(!shiftButton.getAsBoolean());
-
-        drivetrain.setBrakeMode(!brakeModeButton.getAsBoolean());
 
         DifferentialDriveMode mode;
 
