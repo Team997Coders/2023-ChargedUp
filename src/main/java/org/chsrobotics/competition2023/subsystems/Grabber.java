@@ -45,6 +45,10 @@ public class Grabber implements Subsystem {
         isClosed = closed;
     }
 
+    public boolean isClosed() {
+        return isClosed;
+    }
+
     @Override
     public void periodic() {
         closedLogger.update(isClosed);
