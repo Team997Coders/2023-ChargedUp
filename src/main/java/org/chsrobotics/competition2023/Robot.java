@@ -18,14 +18,18 @@ package org.chsrobotics.competition2023;
 
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlanner;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import org.chsrobotics.competition2023.commands.OnTheFlyGenerating;
 import org.chsrobotics.competition2023.commands.TeleopDrive;
 import org.chsrobotics.competition2023.commands.TrajectoryFollow;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
+import org.chsrobotics.lib.input.JoystickButton;
 import org.chsrobotics.lib.input.XboxController;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.util.SRobot;
@@ -47,11 +51,24 @@ public class Robot extends SRobot {
 
     private static final XboxController controller = new XboxController(0);
 
+    private final JoystickButton xbutton = controller.XButton();
+
     private final Trajectory trajectory =
-            PathPlanner.loadPath("testTraj", new PathConstraints(3, 4));
+            PathPlanner.loadPath("3 cone top", new PathConstraints(3, 4));
 
     private final TrajectoryFollow trajectoryFollow =
             new TrajectoryFollow(drivetrain, trajectory, true);
+
+    private final TeleopDrive teleopDrive =
+            new TeleopDrive(
+                    drivetrain,
+                    controller.leftStickVerticalAxis(),
+                    controller.rightStickHorizontalAxis(),
+                    controller.AButton(),
+                    controller.BButton());
+
+    private OnTheFlyGenerating onTheFlyGenerating =
+            new OnTheFlyGenerating(drivetrain, new Pose2d(5, 5, new Rotation2d(0)));
 
     @Override
     public void stateTransition(RobotState from, RobotState to) {
@@ -84,20 +101,15 @@ public class Robot extends SRobot {
             HighLevelLogger.getInstance().logMessage("Loop cycles: " + cycleCounter);
             HighLevelLogger.getInstance().logMessage("Uptime (s): " + uptimer.get());
         } else if (to == RobotState.TELEOPERATED) {
-            scheduler.schedule(
-                    new TeleopDrive(
-                            drivetrain,
-                            controller.leftStickVerticalAxis(),
-                            controller.rightStickHorizontalAxis(),
-                            controller.AButton(),
-                            controller.BButton()));
+            scheduler.schedule(teleopDrive);
+
         } else if (to == RobotState.AUTONOMOUS) {
-            scheduler.schedule(trajectoryFollow);
         }
     }
 
     @Override
     public void periodic(RobotState state) {
+
         scheduler.run();
 
         HighLevelLogger.getInstance().updateLogs();
@@ -105,6 +117,15 @@ public class Robot extends SRobot {
         cycleCounter++;
 
         localizer.periodic();
+
+        if (xbutton.getAsBoolean() == true && scheduler.isScheduled(onTheFlyGenerating) == false) {
+            scheduler.cancel(teleopDrive);
+            onTheFlyGenerating =
+                    new OnTheFlyGenerating(drivetrain, new Pose2d(5, 5, new Rotation2d(0)));
+            scheduler.schedule(onTheFlyGenerating);
+        } else if (scheduler.isScheduled(onTheFlyGenerating) == false) {
+            scheduler.schedule(teleopDrive);
+        }
 
         if (!isReal()) {
             sim.periodic();

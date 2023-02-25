@@ -192,12 +192,12 @@ public final class Constants {
         }
 
         public static final class TELEOP_DRIVE {
-            public static final double FAST_MAX_LINEAR_ACCEL_M_P_SEC_SQUARED = 1;
-            public static final double FAST_MAX_ANGULAR_ACCEL_RADS_P_SEC_SQUARED = 1;
+            public static final double FAST_MAX_LINEAR_ACCEL_M_P_SEC_SQUARED = 4;
+            public static final double FAST_MAX_ANGULAR_ACCEL_RADS_P_SEC_SQUARED = 4;
 
-            public static final double SLOW_MAX_LINEAR_ACCEL_M_P_SEC_SQUARED = 1;
+            public static final double SLOW_MAX_LINEAR_ACCEL_M_P_SEC_SQUARED = 3;
 
-            public static final double SLOW_MAX_ANGULAR_ACCEL_RAD_P_SEC_SQUARED = 1;
+            public static final double SLOW_MAX_ANGULAR_ACCEL_RAD_P_SEC_SQUARED = 3;
         }
     }
 }

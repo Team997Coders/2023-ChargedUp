@@ -79,7 +79,6 @@ public class TrajectoryFollow extends CommandBase {
         addRequirements(drivetrain);
         this.trajectory = trajectory;
         this.drivetrain = drivetrain;
-
         this.setPoseToInitial = setPoseToInitial;
     }
 
