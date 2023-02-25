@@ -175,7 +175,10 @@ public class Drivetrain implements Subsystem {
     public double getRightSensorPosition() {
         if (Robot.isReal()) {
             return Constants.SUBSYSTEM.DRIVETRAIN.ENCODER_TO_OUTPUT.outputFromInput(
-                    rightEncoder.get());
+                            rightEncoder.get())
+                    * 2
+                    * Math.PI
+                    * Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS;
         } else {
             return simRightPositionMeters;
         }
@@ -184,7 +187,10 @@ public class Drivetrain implements Subsystem {
     public double getLeftSensorPosition() {
         if (Robot.isReal()) {
             return Constants.SUBSYSTEM.DRIVETRAIN.ENCODER_TO_OUTPUT.outputFromInput(
-                    leftEncoder.get());
+                            leftEncoder.get())
+                    * 2
+                    * Math.PI
+                    * Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS;
         } else {
             return simLeftPositionMeters;
         }
