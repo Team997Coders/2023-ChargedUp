@@ -16,10 +16,7 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023.commands.arm;
 
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
-import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
-import edu.wpi.first.wpilibj.util.Color8Bit;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import org.chsrobotics.competition2023.Constants;
@@ -27,16 +24,18 @@ import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.util.CSpacePackageLoader.CSpacePackage;
 import org.chsrobotics.lib.commands.TimerCommand;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
+import org.chsrobotics.lib.math.geometry.CardinalSpline;
 import org.chsrobotics.lib.math.geometry.Vector2D;
-import org.chsrobotics.lib.telemetry.HighLevelLogger;
+import org.chsrobotics.lib.models.DoubleJointedArmKinematics;
+import org.chsrobotics.lib.trajectory.planning.CostFunction;
 import org.chsrobotics.lib.trajectory.planning.Dijkstra;
-import org.chsrobotics.lib.trajectory.planning.Dijkstra.CostFunction;
+import org.chsrobotics.lib.trajectory.planning.LineOfSightPathOptimize;
 import org.chsrobotics.lib.util.NodeGraph;
 
 public class ArmNavigate extends ParallelCommandGroup {
     private final TimerCommand timerCommand = new TimerCommand();
 
-    // private final CardinalSpline spline;
+    private final CardinalSpline spline;
 
     private double lastDistal = 0;
     private double lastLocal = 0;
@@ -48,21 +47,31 @@ public class ArmNavigate extends ParallelCommandGroup {
             CSpacePackage pack,
             double robotRelativeSetpointXMeters,
             double robotRelativeSetpointYMeters) {
-        NodeGraph<Vector2D> nodeGraph = new NodeGraph<>();
 
-        var start = nodeGraph.createNode(new Vector2D(2, 2.5));
+        DoubleJointedArmKinematics kinematics =
+                new DoubleJointedArmKinematics(
+                        Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
+                        Constants.SUBSYSTEM.ARM.DISTAL_LENGTH_METERS);
 
-        var holdNode = nodeGraph.createNode(start.getData());
-        var anotherHoldNode = nodeGraph.createNode(start.getData());
+        NodeGraph<Vector2D> nodeGraph = pack.nodes;
 
-        var mid = nodeGraph.createNode(new Vector2D(1.5, 0.25));
+        var start =
+                nodeGraph.createNode(
+                        new Vector2D(arm.getLocalAngleRadians(), arm.getDistalAngleRadians()));
 
-        var end = nodeGraph.createNode(new Vector2D(0.6, 0));
+        // TODO: connect start and end nodes to graph
 
-        nodeGraph.connectNodes(start, holdNode);
-        nodeGraph.connectNodes(holdNode, anotherHoldNode);
-        nodeGraph.connectNodes(anotherHoldNode, mid);
-        nodeGraph.connectNodes(mid, end);
+        var sol =
+                kinematics.inverseKinematics(
+                        robotRelativeSetpointXMeters, robotRelativeSetpointYMeters);
+
+        var leftyEnd =
+                nodeGraph.createNode(
+                        new Vector2D(sol.firstValue().localAngle, sol.firstValue().distalAngle));
+
+        var rightyEnd =
+                nodeGraph.createNode(
+                        new Vector2D(sol.secondValue().localAngle, sol.secondValue().distalAngle));
 
         var costFunction =
                 new CostFunction<Vector2D>() {
@@ -72,15 +81,22 @@ public class ArmNavigate extends ParallelCommandGroup {
                     }
                 };
 
-        var path = Dijkstra.generatePath(nodeGraph, start, end, costFunction);
+        var leftyPath = Dijkstra.generatePath(nodeGraph, start, leftyEnd, costFunction);
+        var rightyPath = Dijkstra.generatePath(nodeGraph, start, rightyEnd, costFunction);
 
-        // var improvedPath = LineOfSightPathOptimize.lineOfSightOptimize(cSpace, path);
+        var improvedLeftyPath = LineOfSightPathOptimize.lineOfSightOptimize(pack.cSpace, leftyPath);
 
-        // improvedPath.add(0, holdNode.getData());
-        // improvedPath.add(0, anotherHoldNode.getData());
+        var improvedRightyPath =
+                LineOfSightPathOptimize.lineOfSightOptimize(pack.cSpace, rightyPath);
 
-        double unscaledTime = path.size();
-        double pathLength = Dijkstra.getTotalCost(path, costFunction);
+        var finalPath =
+                (Dijkstra.getTotalCost(improvedLeftyPath, costFunction)
+                                > Dijkstra.getTotalCost(improvedRightyPath, costFunction))
+                        ? improvedRightyPath
+                        : improvedLeftyPath;
+
+        double unscaledTime = finalPath.size();
+        double pathLength = Dijkstra.getTotalCost(finalPath, costFunction);
 
         if (pathLength == 0) timescale = 1;
         else
@@ -88,69 +104,12 @@ public class ArmNavigate extends ParallelCommandGroup {
                     (Constants.COMMAND.ARM_NAVIGATE.ARM_NAVIGATE_TIME_SCALING * unscaledTime)
                             / pathLength;
 
-        // spline =
-        //        new CardinalSpline(
-        //                Constants.COMMAND.ARM_NAVIGATE.SPLINE_TENSION,
-        //                new Rotation3d(),
-        //                new Rotation3d(),
-        //                path.toArray(new Vector2D[] {}));
-
-        var vis = new Mechanism2d(6, 3);
-
-        vis.getRoot("drivetrainRoot", 2.5, 0.15)
-                .append(
-                        new MechanismLigament2d(
-                                "drivetrain", 1, 0, 10, new Color8Bit(150, 0, 255)));
-
-        var localActual =
-                vis.getRoot(
-                                "root",
-                                3 + Constants.SUBSYSTEM.ARM.ROBOT_TO_ARM.getX(),
-                                0.15 + Constants.SUBSYSTEM.ARM.ROBOT_TO_ARM.getZ())
-                        .append(
-                                new MechanismLigament2d(
-                                        "localActual",
-                                        Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
-                                        arm.getLocalAngleRadians()));
-        var distalActual =
-                localActual.append(
-                        new MechanismLigament2d(
-                                "distalActual",
-                                Constants.SUBSYSTEM.ARM.DISTAL_LENGTH_METERS,
-                                arm.getDistalAngleRadians()));
-
-        var localSetpoint =
-                vis.getRoot("root", 2, 2)
-                        .append(
-                                new MechanismLigament2d(
-                                        "localSetpoint",
-                                        Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
-                                        getLocalSetpointRadians(),
-                                        6,
-                                        new Color8Bit(0, 0, 255)));
-
-        var distalSetpoint =
-                localSetpoint.append(
-                        new MechanismLigament2d(
-                                "distalSetpoint",
-                                Constants.SUBSYSTEM.ARM.DISTAL_LENGTH_METERS,
-                                getDistalSetpointRadians(),
-                                6,
-                                new Color8Bit(0, 0, 255)));
-
-        HighLevelLogger.getInstance().publishSendable("armVis", vis);
-
-        var updateVis =
-                new CommandBase() {
-                    @Override
-                    public void execute() {
-                        localActual.setAngle(new Rotation2d(arm.getLocalAngleRadians()));
-                        distalActual.setAngle(new Rotation2d(arm.getDistalAngleRadians()));
-
-                        localSetpoint.setAngle(new Rotation2d(getLocalSetpointRadians()));
-                        distalSetpoint.setAngle(new Rotation2d(getDistalSetpointRadians()));
-                    }
-                };
+        spline =
+                new CardinalSpline(
+                        Constants.COMMAND.ARM_NAVIGATE.SPLINE_TENSION,
+                        new Rotation3d(),
+                        new Rotation3d(),
+                        finalPath.toArray(new Vector2D[] {}));
 
         var splineXVelFilter = new DifferentiatingFilter();
         var splineXAccelFilter = new DifferentiatingFilter();
@@ -171,7 +130,8 @@ public class ArmNavigate extends ParallelCommandGroup {
                 };
 
         addCommands(
-                updateVis,
+                new UpdateArmVis(
+                        arm, this::getLocalSetpointRadians, this::getDistalSetpointRadians),
                 diffHandler,
                 timerCommand,
                 new ArmSetpointControl(

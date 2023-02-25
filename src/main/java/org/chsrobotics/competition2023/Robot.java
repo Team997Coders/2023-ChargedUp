@@ -22,9 +22,10 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import org.chsrobotics.competition2023.commands.TeleopDrive;
 import org.chsrobotics.competition2023.commands.TrajectoryFollow;
-import org.chsrobotics.competition2023.commands.arm.ArmNavigate;
+import org.chsrobotics.competition2023.commands.arm.CartesianControl;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
@@ -71,6 +72,17 @@ public class Robot extends SRobot {
 
             uptimer.reset();
             uptimer.start();
+
+            // have to schedule a dummy command to get the arm telemetry to show up in NT for
+            // whatever reason-- this doesn't happen with other subsystems
+            scheduler.schedule(
+                    new InstantCommand(
+                            new Runnable() {
+                                @Override
+                                public void run() {}
+                            },
+                            Arm.getInstance()));
+
         } else if (to == RobotState.TEST) {
             // test mode
             CommandScheduler.getInstance().cancelAll();
@@ -94,12 +106,19 @@ public class Robot extends SRobot {
                             controller.AButton(),
                             controller.BButton()));
 
+            // scheduler.schedule(
+            //        new ArmNavigate(
+            //                Arm.getInstance(),
+            //                Constants.COMMAND.ARM_NAVIGATE.FREE_NO_INTAKE,
+            //                1,
+            //                1));
+
             scheduler.schedule(
-                    new ArmNavigate(
+                    new CartesianControl(
                             Arm.getInstance(),
-                            Constants.COMMAND.ARM_NAVIGATE.FREE_NO_INTAKE,
-                            1,
-                            1));
+                            controller.leftStickHorizontalAxis(),
+                            controller.leftStickVerticalAxis(),
+                            controller.AButton()));
 
         } else if (to == RobotState.AUTONOMOUS) {
             scheduler.schedule(trajectoryFollow);

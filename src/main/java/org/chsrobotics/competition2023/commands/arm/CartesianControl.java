@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.lib.input.JoystickAxis;
+import org.chsrobotics.lib.input.JoystickButton;
 import org.chsrobotics.lib.models.DoubleJointedArmKinematics;
 
 public class CartesianControl extends ParallelCommandGroup {
@@ -66,7 +67,12 @@ public class CartesianControl extends ParallelCommandGroup {
 
     private final JoystickPeriodicHandler joystickHandler;
 
-    public CartesianControl(Arm arm, JoystickAxis xAxis, JoystickAxis yAxis) {
+    private final JoystickButton flipHandedness;
+
+    public CartesianControl(
+            Arm arm, JoystickAxis xAxis, JoystickAxis yAxis, JoystickButton flipHandedness) {
+        this.flipHandedness = flipHandedness;
+
         var armConfig =
                 kinematics.forwardKinematics(
                         arm.getLocalAngleRadians(), arm.getDistalAngleRadians());
@@ -80,6 +86,8 @@ public class CartesianControl extends ParallelCommandGroup {
         joystickHandler = new JoystickPeriodicHandler(xAxis, yAxis);
 
         addCommands(
+                new UpdateArmVis(
+                        arm, this::getDesiredLocalAngleRadians, this::getDesiredDistalAngleRadians),
                 new ArmSetpointControl(
                         arm, this::getDesiredLocalAngleRadians, this::getDesiredDistalAngleRadians),
                 joystickHandler);
@@ -92,7 +100,7 @@ public class CartesianControl extends ParallelCommandGroup {
         var armConfigs = kinematics.inverseKinematics(totalX, totalY);
 
         if (armConfigs.firstValue() == null) {
-        } else if (totalX >= 0) {
+        } else if (flipHandedness.getAsBoolean()) {
             lastValidLocalAngle = armConfigs.secondValue().localAngle;
         } else {
             lastValidLocalAngle = armConfigs.firstValue().localAngle;
@@ -108,7 +116,7 @@ public class CartesianControl extends ParallelCommandGroup {
         var armConfigs = kinematics.inverseKinematics(totalX, totalY);
 
         if (armConfigs.firstValue() == null) {
-        } else if (totalX >= 0) {
+        } else if (flipHandedness.getAsBoolean()) {
             lastValidDistalAngle = armConfigs.secondValue().distalAngle;
         } else {
             lastValidDistalAngle = armConfigs.firstValue().distalAngle;

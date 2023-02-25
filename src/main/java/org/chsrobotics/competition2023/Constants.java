@@ -221,7 +221,7 @@ public final class Constants {
         }
 
         public static final class ARM_CARTESIAN_CONTROL {
-            public static final double MAX_SETPOINT_VELOCITY_METERS_PER_SECOND = 0.5;
+            public static final double MAX_SETPOINT_VELOCITY_METERS_PER_SECOND = 1;
         }
 
         public static final class ARM_NAVIGATE {
