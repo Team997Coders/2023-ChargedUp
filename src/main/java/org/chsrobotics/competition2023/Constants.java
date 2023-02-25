@@ -38,10 +38,10 @@ public final class Constants {
 
     public static final class SUBSYSTEM {
         public static final class DRIVETRAIN {
-            public static final int LEFT_ENCODER_CHANNEL_A = 0;
-            public static final int LEFT_ENCODER_CHANNEL_B = 1;
-            public static final int RIGHT_ENCODER_CHANNEL_A = 2;
-            public static final int RIGHT_ENCODER_CHANNEL_B = 3;
+            public static final int LEFT_ENCODER_CHANNEL_A = 2;
+            public static final int LEFT_ENCODER_CHANNEL_B = 3;
+            public static final int RIGHT_ENCODER_CHANNEL_A = 0;
+            public static final int RIGHT_ENCODER_CHANNEL_B = 1;
 
             public static final boolean LEFT_ENCODER_INVERTED = false;
             public static final boolean RIGHT_ENCODER_INVERTED = false;
@@ -55,12 +55,12 @@ public final class Constants {
 
             public static final boolean FRONT_RIGHT_IS_INVERTED = false;
             public static final boolean BACK_RIGHT_IS_INVERTED = false;
-            public static final boolean FRONT_LEFT_IS_INVERTED = false;
-            public static final boolean BACK_LEFT_IS_INVERTED = false;
+            public static final boolean FRONT_LEFT_IS_INVERTED = true;
+            public static final boolean BACK_LEFT_IS_INVERTED = true;
 
             public static final boolean SHIFTER_SOLENOID_INVERTED = false;
 
-            public static final int SHIFTER_SOLENOID_CHANNEL = 3;
+            public static final int SHIFTER_SOLENOID_CHANNEL = 0;
 
             public static final GearRatioHelper SLOW_GEAR_RATIO = new GearRatioHelper(1, 22.67);
 
@@ -103,8 +103,8 @@ public final class Constants {
             public static final PhotonPoseEstimator.PoseStrategy DEFAULT_POSE_STRATEGY =
                     PhotonPoseEstimator.PoseStrategy.CLOSEST_TO_REFERENCE_POSE;
 
-            public static final String AT_CAMERA_A_NAME = "CameraA";
-            public static final String AT_CAMERA_B_NAME = "CameraB";
+            public static final String AT_CAMERA_A_NAME = "photonCameraA";
+            public static final String AT_CAMERA_B_NAME = "photonCameraB";
 
             public static final double AT_CAMERAS_DIAG_FOV_DEGREES = 180;
 
@@ -122,29 +122,15 @@ public final class Constants {
             public static final double AT_CAMERAS_SIMULATION_MIN_TARGET_AREA = 20;
         }
 
-        public static final class INTAKE {
-            public static final int LEFT_MOTOR_CANID = 9;
-            public static final int RIGHT_MOTOR_CANID = 10;
-
-            public static final int DEPLOY_SOLENOID_CHANNEL = 2;
-
-            public static final boolean LEFT_MOTOR_INVERTED = false;
-            public static final boolean RIGHT_MOTOR_INVERTED = false;
-
-            public static final boolean DEPLOY_SOLENOID_INVERTED = false;
-
-            public static final double DEPLOY_RUN_MOTORS_TIME_BUFFER_SECONDS = 0.1;
-
-            public static final IdleMode IDLE_MODE = IdleMode.kCoast;
-        }
-
         public static final class GRABBER {
-            public static final int SOLENOID_CHANNEL = 1;
+            public static final int SOLENOID_CHANNEL = 14;
 
             public static final boolean SOLENOID_INVERTED = false;
         }
 
-        public static final class INERTIAL_MEASUREMENT {}
+        public static final class INERTIAL_MEASUREMENT {
+            public static final Rotation3d ROBOT_TO_NAVX = new Rotation3d(0, Math.PI / 4, 0);
+        }
 
         public static final class POWER_DISTRIBUTION_HUB {}
 
@@ -157,11 +143,13 @@ public final class Constants {
 
             public static final int DISTAL_POTENTIOMETER_ANALOG_CHANNEL = 1;
 
-            public static final int LOCAL_POTENTIOMETER_ANALOG_CHANNEL = 2;
+            public static final int LOCAL_POTENTIOMETER_ANALOG_CHANNEL = 0;
 
-            public static final int DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 0;
+            public static final double DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 4.13;
 
-            public static final int LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 0;
+            public static final double LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 8.55;
+
+            public static final double POTENTIOMETER_RANGE_RADIANS = 6 * Math.PI;
 
             public static final GearRatioHelper DISTAL_POTENTIOMETER_CONVERSION_HELPER =
                     new GearRatioHelper(1, 2);
@@ -175,15 +163,15 @@ public final class Constants {
             public static final GearRatioHelper LOCAL_MOTORS_CONVERSION_HELPER =
                     new GearRatioHelper(1, 200);
 
-            public static final double LOCAL_ANGLE_SMOOTHING_RESPONSE_CONSTANT = 0.25;
+            public static final double LOCAL_ANGLE_SMOOTHING_RESPONSE_CONSTANT = 0.05;
 
-            public static final double DISTAL_ANGLE_SMOOTHING_RESPONSE_CONSTANT = 0.25;
+            public static final double DISTAL_ANGLE_SMOOTHING_RESPONSE_CONSTANT = 0.05;
 
             public static final boolean DISTAL_NEO_INVERTED = false;
 
             public static final boolean LEFT_LOCAL_NEO_INVERTED = false;
 
-            public static final boolean RIGHT_LOCAL_NEO_INVERTED = false;
+            public static final boolean RIGHT_LOCAL_NEO_INVERTED = true;
 
             public static final double LOCAL_COM_POSITION_FROM_ROOT_METERS = 0.26;
 

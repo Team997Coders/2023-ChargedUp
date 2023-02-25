@@ -17,6 +17,7 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.subsystems;
 
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -63,20 +64,10 @@ public class Arm implements Subsystem {
 
     private final LoggerFactory<Double> factory = new LoggerFactory<>(subdirString);
 
-    private final Logger<Double> distalEncoderPositionLogger =
-            factory.getLogger("distalEncoderPosition_radians");
-    private final Logger<Double> localEncoderPositionLogger =
-            factory.getLogger("localEncoderPosition_radians");
-
     private final Logger<Double> distalPotPositionLogger =
             factory.getLogger("distalPotPosition_radians");
     private final Logger<Double> localPotPositionLogger =
             factory.getLogger("localPotPosition_radians");
-
-    private final Logger<Double> distalFusedPositionLogger =
-            factory.getLogger("distalFusedPosition_radians");
-    private final Logger<Double> localFusedPositionLogger =
-            factory.getLogger("localFusedPosition_radians");
 
     private final Logger<Double> distalVelocityLogger =
             factory.getLogger("distalVelocity_radiansPerSecond");
@@ -105,9 +96,6 @@ public class Arm implements Subsystem {
     private double previousDistalPosition = 0;
     private double previousLocalPosition = 0;
 
-    private final double initLocalPosition;
-    private final double initDistalPosition;
-
     private double simLocalAngle = 0;
     private double simDistalAngle = 0;
 
@@ -118,15 +106,13 @@ public class Arm implements Subsystem {
         leftLocalNEO.setInverted(Constants.SUBSYSTEM.ARM.LEFT_LOCAL_NEO_INVERTED);
         rightLocalNEO.setInverted(Constants.SUBSYSTEM.ARM.RIGHT_LOCAL_NEO_INVERTED);
 
-        distalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
-        leftLocalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
-        rightLocalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
+        // distalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
+        // leftLocalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
+        // rightLocalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
 
-        initLocalPosition = getLocalAngleRadians();
-        initDistalPosition = getDistalAngleRadians();
-
-        factory.getLogger("initLocalPosition_radians").update(initLocalPosition);
-        factory.getLogger("initDistalPosition_radians").update(initDistalPosition);
+        distalNEO.setIdleMode(IdleMode.kCoast);
+        leftLocalNEO.setIdleMode(IdleMode.kCoast);
+        rightLocalNEO.setIdleMode(IdleMode.kCoast);
     }
 
     public double getDistalAngleRadians() {
@@ -143,32 +129,16 @@ public class Arm implements Subsystem {
 
     private double getPotDistalAngle() {
         return Constants.SUBSYSTEM.ARM.DISTAL_POTENTIOMETER_CONVERSION_HELPER.outputFromInput(
-                        distalPotentiometer.get())
+                        distalPotentiometer.get()
+                                * Constants.SUBSYSTEM.ARM.POTENTIOMETER_RANGE_RADIANS)
                 - Constants.SUBSYSTEM.ARM.DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO;
     }
 
     private double getPotLocalAngle() {
-        return Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_CONVERSION_HELPER.outputFromInput(
-                        localPotentiometer.get())
-                - Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO;
-    }
-
-    private double getEncoderDistalAngle() {
-        return Constants.SUBSYSTEM.ARM.DISTAL_MOTOR_CONVERSION_HELPER.outputFromInput(
-                        distalNEO.getEncoder().getPosition())
-                + initDistalPosition;
-    }
-
-    private double getEncoderLocalAngle() {
-        double avg =
-                UtilityMath.arithmeticMean(
-                        new double[] {
-                            leftLocalNEO.getEncoder().getPosition(),
-                            rightLocalNEO.getEncoder().getPosition()
-                        });
-
-        return Constants.SUBSYSTEM.ARM.LOCAL_MOTORS_CONVERSION_HELPER.outputFromInput(avg)
-                + initLocalPosition;
+        return Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO
+                - Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_CONVERSION_HELPER.outputFromInput(
+                        localPotentiometer.get()
+                                * Constants.SUBSYSTEM.ARM.POTENTIOMETER_RANGE_RADIANS);
     }
 
     public void setVoltages(double localVoltage, double distalVoltage) {
@@ -198,13 +168,9 @@ public class Arm implements Subsystem {
 
     @Override
     public void periodic() {
-        localAngleSmoother.calculate(
-                UtilityMath.arithmeticMean(
-                        new double[] {getPotLocalAngle(), getEncoderLocalAngle()}));
+        localAngleSmoother.calculate(getPotLocalAngle());
 
-        distalAngleSmoother.calculate(
-                UtilityMath.arithmeticMean(
-                        new double[] {getPotDistalAngle(), getEncoderDistalAngle()}));
+        distalAngleSmoother.calculate(getPotDistalAngle());
 
         double distalDeltaPosition;
 
@@ -238,12 +204,6 @@ public class Arm implements Subsystem {
 
         previousDistalPosition = getDistalAngleRadians();
         previousLocalPosition = getLocalAngleRadians();
-
-        distalFusedPositionLogger.update(getDistalAngleRadians());
-        localFusedPositionLogger.update(getLocalAngleRadians());
-
-        distalEncoderPositionLogger.update(getEncoderDistalAngle());
-        localEncoderPositionLogger.update(getEncoderLocalAngle());
 
         distalPotPositionLogger.update(getPotDistalAngle());
         localPotPositionLogger.update(getPotLocalAngle());

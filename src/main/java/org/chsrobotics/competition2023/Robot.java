@@ -23,12 +23,17 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import org.chsrobotics.competition2023.commands.SimpleGrabberTest;
 import org.chsrobotics.competition2023.commands.TeleopDrive;
 import org.chsrobotics.competition2023.commands.TrajectoryFollow;
 import org.chsrobotics.competition2023.commands.arm.CartesianControl;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
+import org.chsrobotics.competition2023.subsystems.Grabber;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
+import org.chsrobotics.lib.input.JoystickAxis;
+import org.chsrobotics.lib.input.JoystickButton;
+import org.chsrobotics.lib.input.VirtualJoystickButton;
 import org.chsrobotics.lib.input.XboxController;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.util.SRobot;
@@ -48,13 +53,25 @@ public class Robot extends SRobot {
 
     private static final Timer uptimer = new Timer();
 
-    private static final XboxController controller = new XboxController(0);
+    private static final XboxController driverController = new XboxController(0);
+    private static final XboxController operatorController = new XboxController(1);
 
     private final Trajectory trajectory =
             PathPlanner.loadPath("testTraj", new PathConstraints(3, 4));
 
     private final TrajectoryFollow trajectoryFollow =
             new TrajectoryFollow(drivetrain, trajectory, true);
+
+    private final JoystickAxis driveLin = driverController.leftStickVerticalAxis();
+    private final JoystickAxis driveRot = driverController.rightStickHorizontalAxis();
+    private final JoystickButton shift =
+            new VirtualJoystickButton(driverController.rightTriggerAxis(), 0.1, 1, false);
+    private final JoystickButton brake = driverController.BButton();
+
+    private final JoystickAxis localVoltage = operatorController.rightStickHorizontalAxis();
+    private final JoystickAxis distalVoltage = operatorController.leftStickHorizontalAxis();
+
+    private final JoystickButton grabberButton = operatorController.XButton();
 
     @Override
     public void stateTransition(RobotState from, RobotState to) {
@@ -69,6 +86,15 @@ public class Robot extends SRobot {
             DriverStation.startDataLog(HighLevelLogger.getInstance().getLog(), true);
 
             Config.publishChoosers();
+
+            driveRot.setInverted(true);
+            driveLin.setInverted(false);
+
+            driveRot.addDeadband(0.05);
+            driveLin.addDeadband(0.05);
+
+            localVoltage.addDeadband(0.1);
+            distalVoltage.addDeadband(0.1);
 
             uptimer.reset();
             uptimer.start();
@@ -98,13 +124,11 @@ public class Robot extends SRobot {
             HighLevelLogger.getInstance().logMessage("Loop cycles: " + cycleCounter);
             HighLevelLogger.getInstance().logMessage("Uptime (s): " + uptimer.get());
         } else if (to == RobotState.TELEOPERATED) {
-            scheduler.schedule(
-                    new TeleopDrive(
-                            drivetrain,
-                            controller.leftStickVerticalAxis(),
-                            controller.rightStickHorizontalAxis(),
-                            controller.AButton(),
-                            controller.BButton()));
+            scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift, brake));
+
+            scheduler.schedule(new SimpleGrabberTest(Grabber.getInstance(), grabberButton));
+
+            scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift, brake));
 
             // scheduler.schedule(
             //        new ArmNavigate(
@@ -116,9 +140,9 @@ public class Robot extends SRobot {
             scheduler.schedule(
                     new CartesianControl(
                             Arm.getInstance(),
-                            controller.leftStickHorizontalAxis(),
-                            controller.leftStickVerticalAxis(),
-                            controller.AButton()));
+                            operatorController.rightStickHorizontalAxis(),
+                            operatorController.leftStickHorizontalAxis(),
+                            operatorController.AButton()));
 
         } else if (to == RobotState.AUTONOMOUS) {
             scheduler.schedule(trajectoryFollow);
