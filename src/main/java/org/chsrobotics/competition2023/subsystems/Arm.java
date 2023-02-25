@@ -134,10 +134,10 @@ public class Arm implements Subsystem {
     }
 
     private double getPotLocalAngle() {
-        return Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_CONVERSION_HELPER.outputFromInput(
+        return Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO
+                - Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_CONVERSION_HELPER.outputFromInput(
                         localPotentiometer.get()
-                                * Constants.SUBSYSTEM.ARM.POTENTIOMETER_RANGE_RADIANS)
-                - Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO;
+                                * Constants.SUBSYSTEM.ARM.POTENTIOMETER_RANGE_RADIANS);
     }
 
     public void setVoltages(double localVoltage, double distalVoltage) {
