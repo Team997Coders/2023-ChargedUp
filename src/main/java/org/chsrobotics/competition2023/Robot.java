@@ -22,12 +22,10 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import org.chsrobotics.competition2023.commands.drivetrain.TeleopDrive;
-import org.chsrobotics.competition2023.commands.drivetrain.TrajectoryFollow;
 import org.chsrobotics.competition2023.commands.SimpleArmTest;
 import org.chsrobotics.competition2023.commands.SimpleGrabberTest;
-import org.chsrobotics.competition2023.commands.TeleopDrive;
-import org.chsrobotics.competition2023.commands.TrajectoryFollow;
+import org.chsrobotics.competition2023.commands.drivetrain.TeleopDrive;
+import org.chsrobotics.competition2023.commands.drivetrain.TrajectoryFollow;
 import org.chsrobotics.competition2023.commands.intake.IntakeCommand;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
@@ -70,9 +68,7 @@ public class Robot extends SRobot {
     private final JoystickAxis driveLin = driverController.leftStickVerticalAxis();
     private final JoystickAxis driveRot = driverController.rightStickHorizontalAxis();
     private final JoystickButton shift =
-    new VirtualJoystickButton(controller.rightTriggerAxis(), 0.1, 1, false);
             new VirtualJoystickButton(driverController.rightTriggerAxis(), 0.1, 1, false);
-    private final JoystickButton brake = driverController.BButton();
 
     private final JoystickButton intakeButton = operatorController.AButton();
 
