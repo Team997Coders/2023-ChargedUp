@@ -26,11 +26,9 @@ import org.chsrobotics.competition2023.commands.SimpleArmTest;
 import org.chsrobotics.competition2023.commands.SimpleGrabberTest;
 import org.chsrobotics.competition2023.commands.TeleopDrive;
 import org.chsrobotics.competition2023.commands.TrajectoryFollow;
-import org.chsrobotics.competition2023.commands.intake.IntakeCommand;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.Grabber;
-import org.chsrobotics.competition2023.subsystems.Intake;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
 import org.chsrobotics.lib.input.JoystickAxis;
 import org.chsrobotics.lib.input.JoystickButton;
@@ -47,8 +45,6 @@ public class Robot extends SRobot {
     private static final PowerDistributionHub pdh = PowerDistributionHub.getInstance();
 
     private static final Drivetrain drivetrain = Drivetrain.getInstance();
-
-    private static final Intake intake = Intake.getInstance();
 
     private static final CommandScheduler scheduler = CommandScheduler.getInstance();
 
@@ -70,8 +66,6 @@ public class Robot extends SRobot {
     private final JoystickButton shift =
             new VirtualJoystickButton(driverController.rightTriggerAxis(), 0.1, 1, false);
     private final JoystickButton brake = driverController.BButton();
-
-    private final JoystickButton intakeButton = operatorController.AButton();
 
     private final JoystickAxis localVoltage = operatorController.rightStickHorizontalAxis();
     private final JoystickAxis distalVoltage = operatorController.leftStickHorizontalAxis();
@@ -124,9 +118,6 @@ public class Robot extends SRobot {
 
             scheduler.schedule(
                     new SimpleArmTest(Arm.getInstance(), distalVoltage, localVoltage, 6));
-
-            scheduler.schedule(new IntakeCommand(intake, intakeButton));
-
         } else if (to == RobotState.AUTONOMOUS) {
             scheduler.schedule(trajectoryFollow);
         }
