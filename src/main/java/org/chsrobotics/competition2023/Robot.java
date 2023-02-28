@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.chsrobotics.competition2023.commands.SimpleArmTest;
 import org.chsrobotics.competition2023.commands.SimpleGrabberTest;
+import org.chsrobotics.competition2023.commands.drivetrain.AutoBalance;
 import org.chsrobotics.competition2023.commands.drivetrain.TeleopDrive;
 import org.chsrobotics.competition2023.commands.drivetrain.TrajectoryFollow;
 import org.chsrobotics.competition2023.commands.intake.IntakeCommand;
@@ -127,7 +128,7 @@ public class Robot extends SRobot {
             scheduler.schedule(new IntakeCommand(intake, intakeButton));
 
         } else if (to == RobotState.AUTONOMOUS) {
-            scheduler.schedule(trajectoryFollow);
+            scheduler.schedule(new AutoBalance(drivetrain));
         }
     }
 
