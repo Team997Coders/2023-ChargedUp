@@ -24,8 +24,11 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.chsrobotics.competition2023.commands.SimpleArmTest;
 import org.chsrobotics.competition2023.commands.SimpleGrabberTest;
-import org.chsrobotics.competition2023.commands.TeleopDrive;
-import org.chsrobotics.competition2023.commands.TrajectoryFollow;
+import org.chsrobotics.competition2023.commands.drivetrain.AutoBalance;
+import org.chsrobotics.competition2023.commands.drivetrain.GoOverRamp;
+import org.chsrobotics.competition2023.commands.drivetrain.TeleopDrive;
+import org.chsrobotics.competition2023.commands.drivetrain.TrajectoryFollow;
+// import org.chsrobotics.competition2023.commands.intake.IntakeCommand;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.Grabber;
@@ -65,12 +68,12 @@ public class Robot extends SRobot {
     private final JoystickAxis driveRot = driverController.rightStickHorizontalAxis();
     private final JoystickButton shift =
             new VirtualJoystickButton(driverController.rightTriggerAxis(), 0.1, 1, false);
-    private final JoystickButton brake = driverController.BButton();
 
     private final JoystickAxis localVoltage = operatorController.rightStickHorizontalAxis();
     private final JoystickAxis distalVoltage = operatorController.leftStickHorizontalAxis();
 
     private final JoystickButton grabberButton = operatorController.XButton();
+    private final JoystickButton autoBalanceButton = driverController.BButton();
 
     @Override
     public void stateTransition(RobotState from, RobotState to) {
@@ -95,6 +98,8 @@ public class Robot extends SRobot {
             localVoltage.addDeadband(0.1);
             distalVoltage.addDeadband(0.1);
 
+            autoBalanceButton.onTrue(new AutoBalance(drivetrain));
+
             uptimer.reset();
             uptimer.start();
         } else if (to == RobotState.TEST) {
@@ -112,14 +117,14 @@ public class Robot extends SRobot {
             HighLevelLogger.getInstance().logMessage("Loop cycles: " + cycleCounter);
             HighLevelLogger.getInstance().logMessage("Uptime (s): " + uptimer.get());
         } else if (to == RobotState.TELEOPERATED) {
-            scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift, brake));
+            scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift));
 
             scheduler.schedule(new SimpleGrabberTest(Grabber.getInstance(), grabberButton));
 
             scheduler.schedule(
                     new SimpleArmTest(Arm.getInstance(), distalVoltage, localVoltage, 6));
         } else if (to == RobotState.AUTONOMOUS) {
-            scheduler.schedule(trajectoryFollow);
+            scheduler.schedule(new GoOverRamp(drivetrain));
         }
     }
 
