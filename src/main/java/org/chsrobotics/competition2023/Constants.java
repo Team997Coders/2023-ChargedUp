@@ -53,7 +53,7 @@ public final class Constants {
             public static final boolean FRONT_LEFT_IS_INVERTED = true;
             public static final boolean BACK_LEFT_IS_INVERTED = true;
 
-            public static final boolean SHIFTER_SOLENOID_INVERTED = false;
+            public static final boolean SHIFTER_SOLENOID_INVERTED = true;
 
             public static final int SHIFTER_SOLENOID_CHANNEL = 0;
 
@@ -117,22 +117,6 @@ public final class Constants {
             public static final double AT_CAMERAS_SIMULATION_MIN_TARGET_AREA = 20;
         }
 
-        public static final class INTAKE {
-            public static final int LEFT_MOTOR_CANID = 10;
-            public static final int RIGHT_MOTOR_CANID = 9;
-
-            public static final int DEPLOY_SOLENOID_CHANNEL = 15;
-
-            public static final boolean LEFT_MOTOR_INVERTED = false;
-            public static final boolean RIGHT_MOTOR_INVERTED = true;
-
-            public static final boolean DEPLOY_SOLENOID_INVERTED = false;
-
-            public static final double DEPLOY_RUN_MOTORS_TIME_BUFFER_SECONDS = 0.5;
-
-            public static final IdleMode IDLE_MODE = IdleMode.kCoast;
-        }
-
         public static final class GRABBER {
             public static final int SOLENOID_CHANNEL = 14;
 
@@ -140,7 +124,7 @@ public final class Constants {
         }
 
         public static final class INERTIAL_MEASUREMENT {
-            public static final Rotation3d ROBOT_TO_NAVX = new Rotation3d(0, Math.PI / 4, 0);
+            public static final Rotation3d ROBOT_TO_NAVX = new Rotation3d(0, 0, 0);
         }
 
         public static final class POWER_DISTRIBUTION_HUB {}

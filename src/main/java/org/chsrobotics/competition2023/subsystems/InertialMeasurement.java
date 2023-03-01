@@ -199,7 +199,8 @@ public class InertialMeasurement implements Subsystem {
     }
 
     public double getPitchRadians() {
-        return rotation.getY();
+        // return rotation.getY();
+        return -headingDegreesToAngleRadians(navX.getPitch());
     }
 
     public double getPitchAngularVelocityRadiansPerSecond() {
@@ -315,7 +316,7 @@ public class InertialMeasurement implements Subsystem {
 
         Rotation3d relRot = new Rotation3d(relRoll, relPitch, relYaw);
 
-        rotation = relRot.plus(Constants.SUBSYSTEM.INERTIAL_MEASUREMENT.ROBOT_TO_NAVX);
+        rotation = relRot.rotateBy(Constants.SUBSYSTEM.INERTIAL_MEASUREMENT.ROBOT_TO_NAVX);
 
         double relX = Robot.isReal() ? gToMetersPerSecondSquared(navX.getRawAccelX()) : simXAccel;
 
