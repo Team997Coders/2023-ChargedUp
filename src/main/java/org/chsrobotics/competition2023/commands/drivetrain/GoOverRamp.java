@@ -33,11 +33,16 @@ public class GoOverRamp extends CommandBase {
 
     private final Drivetrain drivetrain;
 
-    private State state = State.DRIVE_OFF;
+    private State state = State.DRIVE_TO;
 
     public GoOverRamp(Drivetrain drivetrain) {
         this.drivetrain = drivetrain;
         addRequirements(drivetrain);
+    }
+
+    @Override
+    public void initialize() {
+        state = State.DRIVE_TO;
     }
 
     @Override
@@ -52,7 +57,7 @@ public class GoOverRamp extends CommandBase {
 
         if (UtilityMath.epsilonEqualsAbsolute(
                 gyroPitchDegrees, 0, Constants.COMMAND.GO_OVER_RAMP.BALANCED_TOLERANCE_DEGREES)) {
-            state = State.DRIVE_OFF;
+            state = State.DRIVE_TO;
         } else if (gyroPitchDegrees > Constants.COMMAND.GO_OVER_RAMP.BALANCED_TOLERANCE_DEGREES) {
             state = State.DRIVE_UP;
         } else if (Units.radiansToDegrees(gyroRateDPS) < 0) {
@@ -69,15 +74,28 @@ public class GoOverRamp extends CommandBase {
         if (state == State.DRIVE_TO) {
             drivetrain.setLeftVoltages(driveVoltage);
             drivetrain.setRightVoltages(driveVoltage);
+            if (gyroPitchDegrees > Constants.COMMAND.GO_OVER_RAMP.BALANCED_TOLERANCE_DEGREES) {
+                state = State.DRIVE_UP;
+            }
         } else if (state == State.DRIVE_UP) {
             drivetrain.setLeftVoltages(driveVoltage / 2);
             drivetrain.setRightVoltages(driveVoltage / 2);
+            if (Units.radiansToDegrees(gyroRateDPS) < 0) {
+                state = State.FALLING;
+            }
+
         } else if (state == State.FALLING) {
             drivetrain.setLeftVoltages(0);
             drivetrain.setRightVoltages(0);
+            if (UtilityMath.epsilonEqualsAbsolute(
+                    gyroRateDPS,
+                    Constants.COMMAND.GO_OVER_RAMP.FALLING_RATE_TOLERANCE_DEGREES_PER_SECOND,
+                    gyroRateDPS)) {
+                state = State.DRIVE_OFF;
+            }
         } else if (state == State.DRIVE_OFF) {
-            drivetrain.setLeftVoltages(driveVoltage);
-            drivetrain.setRightVoltages(driveVoltage);
+            drivetrain.setLeftVoltages(0);
+            drivetrain.setRightVoltages(0);
         }
     }
 

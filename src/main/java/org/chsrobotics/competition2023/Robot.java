@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import org.chsrobotics.competition2023.commands.SimpleArmTest;
 import org.chsrobotics.competition2023.commands.SimpleGrabberTest;
 import org.chsrobotics.competition2023.commands.drivetrain.AutoBalance;
+import org.chsrobotics.competition2023.commands.drivetrain.GoOverRamp;
 import org.chsrobotics.competition2023.commands.drivetrain.TeleopDrive;
 import org.chsrobotics.competition2023.commands.drivetrain.TrajectoryFollow;
 // import org.chsrobotics.competition2023.commands.intake.IntakeCommand;
@@ -72,6 +73,7 @@ public class Robot extends SRobot {
     private final JoystickAxis distalVoltage = operatorController.leftStickHorizontalAxis();
 
     private final JoystickButton grabberButton = operatorController.XButton();
+    private final JoystickButton autoBalanceButton = driverController.BButton();
 
     @Override
     public void stateTransition(RobotState from, RobotState to) {
@@ -95,6 +97,8 @@ public class Robot extends SRobot {
 
             localVoltage.addDeadband(0.1);
             distalVoltage.addDeadband(0.1);
+
+            autoBalanceButton.onTrue(new AutoBalance(drivetrain));
 
             uptimer.reset();
             uptimer.start();
@@ -120,7 +124,7 @@ public class Robot extends SRobot {
             scheduler.schedule(
                     new SimpleArmTest(Arm.getInstance(), distalVoltage, localVoltage, 6));
         } else if (to == RobotState.AUTONOMOUS) {
-            scheduler.schedule(new AutoBalance(drivetrain));
+            scheduler.schedule(new GoOverRamp(drivetrain));
         }
     }
 
