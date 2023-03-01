@@ -181,11 +181,11 @@ public final class Constants {
 
             public static final double LOCAL_MOMENT_ABOUT_COM = 1.91;
 
-            public static final double DISTAL_COM_POSITION_FROM_ROOT_METERS = 0.45;
+            public static final double DISTAL_COM_POSITION_FROM_ROOT_METERS = 0.61;
 
-            public static final double DISTAL_MASS_KG = 1.9;
+            public static final double DISTAL_MASS_KG = 3.1;
 
-            public static final double DISTAL_LENGTH_METERS = 0.81;
+            public static final double DISTAL_LENGTH_METERS = 0.95;
 
             public static final double DISTAL_MOMENT_ABOUT_COM = 1.65;
 
@@ -197,19 +197,20 @@ public final class Constants {
 
     public static final class COMMAND {
         public static final class ARM_SETPOINT {
-            public static final PIDConstants LOCAL_CONTROLLER_CONSTANTS =
-                    new PIDConstants(24, 0, 0);
+            public static final PIDConstants LOCAL_CONTROLLER_CONSTANTS = new PIDConstants(6, 0, 0);
 
             public static final int LOCAL_CONTROLLER_INTEGRATION_WINDOW = -1;
 
             public static final PIDConstants DISTAL_CONTROLLER_CONSTANTS =
-                    new PIDConstants(36, 0, 0);
+                    new PIDConstants(4, 0, 0);
 
             public static final int DISTAL_CONTROLLER_INTEGRATION_WINDOW = -1;
+
+            public static final double KG_SCALING = 0.35;
         }
 
         public static final class ARM_CARTESIAN_CONTROL {
-            public static final double MAX_SETPOINT_VELOCITY_METERS_PER_SECOND = 1;
+            public static final double MAX_SETPOINT_VELOCITY_METERS_PER_SECOND = 2;
         }
 
         public static final class ARM_NAVIGATE {
@@ -217,9 +218,9 @@ public final class Constants {
 
             public static final double SPLINE_TENSION = 0.4;
 
-            public static final CSpacePackage FREE_NO_INTAKE =
+            public static final CSpacePackage FREE =
                     CSpacePackageLoader.loadPackage(
-                            new File(Filesystem.getDeployDirectory(), "/cspace/freeNoIntake.json"));
+                            new File(Filesystem.getDeployDirectory(), "/cspace/feb27.json"));
         }
 
         public static final class TRAJECTORY_FOLLOWING {

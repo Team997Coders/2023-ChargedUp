@@ -20,22 +20,32 @@ import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlanner;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import java.io.File;
 import org.chsrobotics.competition2023.commands.SimpleGrabberTest;
 import org.chsrobotics.competition2023.commands.TeleopDrive;
 import org.chsrobotics.competition2023.commands.TrajectoryFollow;
-import org.chsrobotics.competition2023.commands.arm.CartesianControl;
+import org.chsrobotics.competition2023.commands.arm.ArmSetpointControl;
+import org.chsrobotics.competition2023.commands.arm.UpdateArmVis;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.Grabber;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
+import org.chsrobotics.competition2023.util.CSpacePackageLoader;
+import org.chsrobotics.competition2023.util.CSpacePackageLoader.CSpacePackage;
 import org.chsrobotics.lib.input.JoystickAxis;
 import org.chsrobotics.lib.input.JoystickButton;
 import org.chsrobotics.lib.input.VirtualJoystickButton;
 import org.chsrobotics.lib.input.XboxController;
+import org.chsrobotics.lib.math.geometry.Polygon;
+import org.chsrobotics.lib.math.geometry.Vector2D;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
+import org.chsrobotics.lib.trajectory.planning.ConfigurationSpace;
+import org.chsrobotics.lib.trajectory.planning.ConfigurationSpace.ConfigurationSpaceDimension;
+import org.chsrobotics.lib.util.NodeGraph;
 import org.chsrobotics.lib.util.SRobot;
 
 public class Robot extends SRobot {
@@ -99,6 +109,20 @@ public class Robot extends SRobot {
             uptimer.reset();
             uptimer.start();
 
+            NodeGraph<Vector2D> nodes = new NodeGraph<>();
+
+            CSpacePackage pack =
+                    new CSpacePackage(
+                            new ConfigurationSpace(
+                                    new ConfigurationSpaceDimension(
+                                            -Math.PI / 2, (3 * Math.PI) / 2, false),
+                                    new ConfigurationSpaceDimension(0, 2 * Math.PI, false),
+                                    new Polygon(new Vector2D(cycleCounter, cycleCounter))),
+                            nodes);
+
+            CSpacePackageLoader.writePackage(
+                    new File(Filesystem.getDeployDirectory(), "cspace/feb27.json"), pack);
+
             // have to schedule a dummy command to get the arm telemetry to show up in NT for
             // whatever reason-- this doesn't happen with other subsystems
             scheduler.schedule(
@@ -133,16 +157,26 @@ public class Robot extends SRobot {
             // scheduler.schedule(
             //        new ArmNavigate(
             //                Arm.getInstance(),
-            //                Constants.COMMAND.ARM_NAVIGATE.FREE_NO_INTAKE,
+            //                Constants.COMMAND.ARM_NAVIGATE.FREE,
             //                1,
             //                1));
 
+            var axisH = operatorController.rightStickHorizontalAxis();
+
+            var axisV = operatorController.rightStickVerticalAxis();
+
+            axisH.addDeadband(0.05);
+
+            axisV.setInverted(true);
+            axisV.addDeadband(0.05);
+
+            // scheduler.schedule(
+            //        new CartesianControl(
+            //                Arm.getInstance(), axisH, axisV, operatorController.AButton()));
+
             scheduler.schedule(
-                    new CartesianControl(
-                            Arm.getInstance(),
-                            operatorController.rightStickHorizontalAxis(),
-                            operatorController.leftStickHorizontalAxis(),
-                            operatorController.AButton()));
+                    new ArmSetpointControl(Arm.getInstance(), 1, 1),
+                    new UpdateArmVis(Arm.getInstance(), () -> 1, () -> 1));
 
         } else if (to == RobotState.AUTONOMOUS) {
             scheduler.schedule(trajectoryFollow);

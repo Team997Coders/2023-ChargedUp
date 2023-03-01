@@ -145,27 +145,27 @@ public class ArmNavigate extends ParallelCommandGroup {
     }
 
     private double getLocalSetpointRadians() {
-        // var splineResult = spline.sample(timescale * timerCommand.getTimeElapsed());
+        var splineResult = spline.sample(timescale * timerCommand.getTimeElapsed());
 
-        // if (splineResult != null) {
-        //     lastLocal = splineResult.getX();
-        //     return splineResult.getX();
-        // } else {
-        //     return lastLocal;
-        // }
-        return 0;
+        if (splineResult != null) {
+            lastLocal = splineResult.getX();
+            return splineResult.getX();
+        } else {
+            return lastLocal;
+        }
+        // return 0;
     }
 
     private double getDistalSetpointRadians() {
-        // var splineResult = spline.sample(timescale * timerCommand.getTimeElapsed());
+        var splineResult = spline.sample(timescale * timerCommand.getTimeElapsed());
 
-        // if (splineResult != null) {
-        //     lastDistal = splineResult.getY();
-        //     return splineResult.getY();
-        // } else {
-        //     return lastDistal;
-        // }
+        if (splineResult != null) {
+            lastDistal = splineResult.getY();
+            return splineResult.getY();
+        } else {
+            return lastDistal;
+        }
 
-        return 0;
+        // return 0;
     }
 }

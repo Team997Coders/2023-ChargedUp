@@ -150,7 +150,8 @@ public class ArmSetpointControl extends CommandBase {
                         VecBuilder.fill(
                                 localVelLamdba.getAsDouble(), distalVelLamdba.getAsDouble()),
                         VecBuilder.fill(
-                                localAccelLambda.getAsDouble(), distalAccelLambda.getAsDouble()));
+                                localAccelLambda.getAsDouble(), distalAccelLambda.getAsDouble()),
+                        Constants.COMMAND.ARM_SETPOINT.KG_SCALING);
 
         localFeedforwardLogger.update(feedforwardU.get(0, 0));
         distalFeedforwardLogger.update(feedforwardU.get(1, 0));
