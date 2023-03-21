@@ -72,6 +72,11 @@ public class Arm implements Subsystem {
     private final Logger<Double> localPotPositionLogger =
             factory.getLogger("localPotPosition_radians");
 
+    private final Logger<Double> unOffsetLocalPotLogger =
+            factory.getLogger("unoffsetLocalPotPosition_radians");
+    private final Logger<Double> unOffsetDistalPotLogger =
+            factory.getLogger("unoffsetdistalPotPosition_radians");
+
     private final Logger<Double> distalVelocityLogger =
             factory.getLogger("distalVelocity_radiansPerSecond");
     private final Logger<Double> localVelocityLogger =
@@ -139,17 +144,28 @@ public class Arm implements Subsystem {
     }
 
     private double getPotDistalAngle() {
-        return Constants.SUBSYSTEM.ARM.DISTAL_POTENTIOMETER_CONVERSION_HELPER.outputFromInput(
+        double unoffset =
+                Constants.SUBSYSTEM.ARM.DISTAL_POTENTIOMETER_CONVERSION_HELPER.outputFromInput(
                         distalPotentiometer.get()
-                                * Constants.SUBSYSTEM.ARM.POTENTIOMETER_RANGE_RADIANS)
+                                * Constants.SUBSYSTEM.ARM.POTENTIOMETER_RANGE_RADIANS);
+
+        unOffsetDistalPotLogger.update(unoffset);
+
+        return unoffset
                 - Constants.SUBSYSTEM.ARM.DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO;
     }
 
     private double getPotLocalAngle() {
-        return Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO
-                - Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_CONVERSION_HELPER.outputFromInput(
+        double unoffset =
+                Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_CONVERSION_HELPER.outputFromInput(
                         localPotentiometer.get()
                                 * Constants.SUBSYSTEM.ARM.POTENTIOMETER_RANGE_RADIANS);
+
+        unOffsetLocalPotLogger.update(unoffset);
+
+        // potentiometer increments in inverse direction compared with distal
+        return Constants.SUBSYSTEM.ARM.LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO
+                - unoffset;
     }
 
     public void setVoltages(double localVoltage, double distalVoltage) {
