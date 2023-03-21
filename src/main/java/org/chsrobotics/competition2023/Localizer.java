@@ -64,8 +64,8 @@ public class Localizer {
         poseEstimator.updateWithTime(
                 Units.millisecondsToSeconds(System.currentTimeMillis()),
                 new Rotation2d(InertialMeasurement.getInstance().getYawRadians()),
-                Drivetrain.getInstance().getLeftSensorPosition(),
-                Drivetrain.getInstance().getRightSensorPosition());
+                Drivetrain.getInstance().getLeftNEOPosition(),
+                Drivetrain.getInstance().getRightNEOPosition());
 
         if (vision.getCurrentPoseEstimates() != null) {
             var estimates = vision.getCurrentPoseEstimates();

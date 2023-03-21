@@ -14,7 +14,7 @@ See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. 
 If not, see <https://www.gnu.org/licenses/>.
 */
-package org.chsrobotics.competition2023.commands;
+package org.chsrobotics.competition2023.commands.drivetrain;
 
 import edu.wpi.first.math.controller.DifferentialDriveAccelerationLimiter;
 import edu.wpi.first.wpilibj2.command.CommandBase;
@@ -50,14 +50,15 @@ public class TeleopDrive extends CommandBase {
     private final JoystickAxis axisB;
 
     private final JoystickButton shiftButton;
-    private final JoystickButton brakeModeButton;
+
+    private final JoystickAxis slowAxis;
 
     public TeleopDrive(
             Drivetrain drivetrain,
             JoystickAxis axisA,
             JoystickAxis axisB,
             JoystickButton shiftButton,
-            JoystickButton brakeModeButton) {
+            JoystickAxis slowAxis) {
         addRequirements(drivetrain);
         this.drivetrain = drivetrain;
 
@@ -65,14 +66,13 @@ public class TeleopDrive extends CommandBase {
         this.axisB = axisB;
 
         this.shiftButton = shiftButton;
-        this.brakeModeButton = brakeModeButton;
+
+        this.slowAxis = slowAxis;
     }
 
     @Override
     public void execute() {
         drivetrain.setShifters(!shiftButton.getAsBoolean());
-
-        drivetrain.setBrakeMode(!brakeModeButton.getAsBoolean());
 
         DifferentialDriveMode mode;
 
@@ -110,16 +110,17 @@ public class TeleopDrive extends CommandBase {
                         (mode.execute().left) * Constants.GLOBAL.GLOBAL_NOMINAL_VOLTAGE_VOLTS,
                         (mode.execute().right) * Constants.GLOBAL.GLOBAL_NOMINAL_VOLTAGE_VOLTS);
 
-        // these are commented out, as the feedforward term causes drivetrain outputs
-        // to oscillate rapidly at +- 3000 volts. This is almost certainly because of
-        // temporary numbers in the Constants class that give ridiculous conversions from
-        // encoder counts to meters
-        // TODO: revise those temporary numbers
+        // these are commented out, as we literally didn't have time to get the drivetrain
+        // feedforward ready
 
         // drivetrain.setRightVoltages(voltages.right);
         // drivetrain.setLeftVoltages(voltages.left);
 
-        drivetrain.setRightVoltages(mode.execute().right * 12);
-        drivetrain.setLeftVoltages(mode.execute().left * 12);
+        double slowModifier =
+                ((1 - slowAxis.getValue()) * (1 - Constants.COMMAND.TELEOP_DRIVE.MIN_SPEED))
+                        + Constants.COMMAND.TELEOP_DRIVE.MIN_SPEED;
+
+        drivetrain.setRightVoltages(mode.execute().right * 12 * slowModifier);
+        drivetrain.setLeftVoltages(mode.execute().left * 12 * slowModifier);
     }
 }

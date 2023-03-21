@@ -17,30 +17,27 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.commands;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import org.chsrobotics.competition2023.subsystems.Arm;
-import org.chsrobotics.lib.input.JoystickAxis;
+import org.chsrobotics.competition2023.subsystems.Claw;
+import org.chsrobotics.lib.input.JoystickButton;
 
-public class SimpleArmTest extends CommandBase {
-    private final Arm arm;
+public class ClawCommand extends CommandBase {
+    private final Claw claw;
 
-    private final JoystickAxis distalInput;
-    private final JoystickAxis localInput;
+    private final JoystickButton toggleClaw;
 
-    private final double scaling;
+    private boolean lastClawState = false;
 
-    public SimpleArmTest(
-            Arm arm, JoystickAxis distalInput, JoystickAxis localInput, double scaling) {
-        addRequirements(arm);
-        this.arm = arm;
+    public ClawCommand(Claw claw, JoystickButton toggleClaw) {
+        addRequirements(claw);
+        this.claw = claw;
 
-        this.distalInput = distalInput;
-        this.localInput = localInput;
-
-        this.scaling = scaling;
+        this.toggleClaw = toggleClaw;
     }
 
     @Override
     public void execute() {
-        arm.setVoltages(localInput.getValue() * scaling, distalInput.getValue() * scaling);
+        if (toggleClaw.getAsBoolean() && !lastClawState) claw.setSolenoid(!claw.isClosed());
+
+        lastClawState = toggleClaw.getAsBoolean();
     }
 }

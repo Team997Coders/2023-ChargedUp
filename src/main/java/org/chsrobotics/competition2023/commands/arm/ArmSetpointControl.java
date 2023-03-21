@@ -19,17 +19,16 @@ package org.chsrobotics.competition2023.commands.arm;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.numbers.N2;
-import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import java.util.function.DoubleSupplier;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.lib.controllers.feedback.PID;
 import org.chsrobotics.lib.math.UtilityMath;
-import org.chsrobotics.lib.models.DoubleJointedArmModel;
 import org.chsrobotics.lib.telemetry.Logger;
 
-// TODO: new command loggers
 public class ArmSetpointControl extends CommandBase {
     private final Arm arm;
 
@@ -41,24 +40,6 @@ public class ArmSetpointControl extends CommandBase {
 
     private final DoubleSupplier localAccelLambda;
     private final DoubleSupplier distalAccelLambda;
-
-    private final DoubleJointedArmModel armSim =
-            new DoubleJointedArmModel(
-                    Constants.SUBSYSTEM.ARM.LOCAL_MASS_KG,
-                    Constants.SUBSYSTEM.ARM.LOCAL_COM_POSITION_FROM_ROOT_METERS,
-                    Constants.SUBSYSTEM.ARM.LOCAL_MOMENT_ABOUT_COM,
-                    Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
-                    DCMotor.getNEO(2)
-                            .withReduction(
-                                    Constants.SUBSYSTEM.ARM.LOCAL_MOTORS_CONVERSION_HELPER
-                                            .toDoubleRatioOutputToInput()),
-                    Constants.SUBSYSTEM.ARM.DISTAL_MASS_KG,
-                    Constants.SUBSYSTEM.ARM.DISTAL_COM_POSITION_FROM_ROOT_METERS,
-                    Constants.SUBSYSTEM.ARM.DISTAL_MOMENT_ABOUT_COM,
-                    DCMotor.getNEO(1)
-                            .withReduction(
-                                    Constants.SUBSYSTEM.ARM.DISTAL_MOTOR_CONVERSION_HELPER
-                                            .toDoubleRatioOutputToInput()));
 
     private final String subdirString = "armSetpointControl";
 
@@ -145,13 +126,12 @@ public class ArmSetpointControl extends CommandBase {
         double distalFeedbackU = distalController.calculate(distalAngle);
 
         Vector<N2> feedforwardU =
-                armSim.feedforward(
-                        VecBuilder.fill(localSetpoint, distalSetpoint),
+                Constants.SUBSYSTEM.ARM.ARM_MODEL.feedforward(
+                        VecBuilder.fill(arm.getLocalAngleRadians(), arm.getDistalAngleRadians()),
                         VecBuilder.fill(
                                 localVelLamdba.getAsDouble(), distalVelLamdba.getAsDouble()),
                         VecBuilder.fill(
-                                localAccelLambda.getAsDouble(), distalAccelLambda.getAsDouble()),
-                        Constants.COMMAND.ARM_SETPOINT.KG_SCALING);
+                                localAccelLambda.getAsDouble(), distalAccelLambda.getAsDouble()));
 
         localFeedforwardLogger.update(feedforwardU.get(0, 0));
         distalFeedforwardLogger.update(feedforwardU.get(1, 0));
@@ -164,6 +144,15 @@ public class ArmSetpointControl extends CommandBase {
         double distalU = distalFeedbackU + feedforwardU.get(1, 0);
 
         arm.setVoltages(localU, distalU);
+
+        SmartDashboard.putNumber(
+                "distal error degrees",
+                Units.radiansToDegrees(
+                        distalController.getSetpoint() - arm.getDistalAngleRadians()));
+
+        SmartDashboard.putNumber(
+                "local error degrees",
+                Units.radiansToDegrees(localController.getSetpoint() - arm.getLocalAngleRadians()));
     }
 
     @Override

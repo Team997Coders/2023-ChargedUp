@@ -45,6 +45,8 @@ public class PowerDistributionHub implements Subsystem {
 
         // explicitly set as on because all our coprocessors are off that branch
         pdh.setSwitchableChannel(true);
+
+        pdh.clearStickyFaults();
     }
 
     public static PowerDistributionHub getInstance() {

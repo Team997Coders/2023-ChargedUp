@@ -1,0 +1,263 @@
+{
+  "tabPane": [
+    {
+      "title": "Main",
+      "autoPopulate": false,
+      "autoPopulatePrefix": "",
+      "widgetPane": {
+        "gridSize": 64.0,
+        "showGrid": true,
+        "hgap": 16.0,
+        "vgap": 12.0,
+        "titleType": 0,
+        "tiles": {
+          "10,2": {
+            "size": [
+              6,
+              4
+            ],
+            "content": {
+              "_type": "Field",
+              "_source0": "network_table:///sendables/RobotPose",
+              "_title": "Pose",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Game/Game": "A2023_Charged_Up",
+              "Visuals/Robot Icon Size": 50.0,
+              "Visuals/Show Outside Circles": false
+            }
+          },
+          "12,0": {
+            "size": [
+              2,
+              2
+            ],
+            "content": {
+              "_type": "Number Bar",
+              "_source0": "network_table:///system/batteryVoltage_volts",
+              "_title": "Bus Voltage",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Range/Min": 5.0,
+              "Range/Max": 13.0,
+              "Range/Center": 0.0,
+              "Visuals/Num tick marks": 5,
+              "Visuals/Show text": true,
+              "Visuals/Orientation": "HORIZONTAL"
+            }
+          },
+          "10,0": {
+            "size": [
+              2,
+              2
+            ],
+            "content": {
+              "_type": "Simple Dial",
+              "_source0": "network_table:///system/canUtilitzation_percent",
+              "_title": "CAN Utilization",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Range/Min": 0.0,
+              "Range/Max": 100.0,
+              "Visuals/Show value": true
+            }
+          },
+          "6,0": {
+            "size": [
+              2,
+              2
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///system/isBrownedOut",
+              "_title": "Brownout",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Colors/Color when true": "#800000FF",
+              "Colors/Color when false": "#00FF00FF"
+            }
+          },
+          "8,0": {
+            "size": [
+              2,
+              2
+            ],
+            "content": {
+              "_type": "Simple Dial",
+              "_source0": "network_table:///pneumatics/storagePressurePSI",
+              "_title": "Storage Pressure",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Range/Min": 0.0,
+              "Range/Max": 125.0,
+              "Visuals/Show value": true
+            }
+          },
+          "14,0": {
+            "size": [
+              2,
+              2
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///powerDistribution/totalCurrent_A",
+              "_title": "Total Current",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "4,5": {
+            "size": [
+              4,
+              2
+            ],
+            "content": {
+              "_type": "ComboBox Chooser",
+              "_source0": "network_table:///sendables/autoModeChooser",
+              "_title": "Auto Mode",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "10,6": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///arm/distalPotPosition_radians",
+              "_title": "Distal Angle",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "8,6": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///arm/localPotPosition_radians",
+              "_title": "Local Angle",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "14,6": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///grabber/grabberClosed",
+              "_title": "Grabber",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Colors/Color when true": "#00FF00FF",
+              "Colors/Color when false": "#800000FF"
+            }
+          },
+          "12,6": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///drivetrain/shifterSlow",
+              "_title": "Shifted",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Colors/Color when true": "#800000FF",
+              "Colors/Color when false": "#00FF00FF"
+            }
+          },
+          "4,0": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///arm/currentWarning",
+              "_title": "Arm Current",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Colors/Color when true": "#800000FF",
+              "Colors/Color when false": "#00FF00FF"
+            }
+          },
+          "4,1": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///arm/thermalWarning",
+              "_title": "Arm Thermal",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Colors/Color when true": "#800000FF",
+              "Colors/Color when false": "#00FF00FF"
+            }
+          },
+          "2,0": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///drivetrain/currentWarning",
+              "_title": "Drivetrain Current",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Colors/Color when true": "#800000FF",
+              "Colors/Color when false": "#00FF00FF"
+            }
+          },
+          "2,1": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///drivetrain/thermalWarning",
+              "_title": "Drivetrain Thermal",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Colors/Color when true": "#800000FF",
+              "Colors/Color when false": "#00FF00FF"
+            }
+          },
+          "0,0": {
+            "size": [
+              2,
+              2
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///pneumatics/pressureWarning",
+              "_title": "Pneumatic Pressure",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Colors/Color when true": "#800000FF",
+              "Colors/Color when false": "#00FF00FF"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "windowGeometry": {
+    "x": 0.0,
+    "y": 27.0,
+    "width": 1366.0,
+    "height": 689.0
+  }
+}

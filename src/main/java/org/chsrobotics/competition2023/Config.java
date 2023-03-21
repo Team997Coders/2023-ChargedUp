@@ -20,6 +20,33 @@ import org.chsrobotics.lib.telemetry.DashboardChooser;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 
 public class Config {
+    public static final class AUTO_MODES {
+        public static enum MODES implements DashboardChooser.Option {
+            NOTHING("Do Nothing"),
+            MOBILITY("Mobility"),
+            LOW_CUBE("Low Cube"),
+            MOBILITY_LOW_CUBE("Low Cube + Mobility"),
+            BALANCE("Balance"),
+            MOBILITY_BALANCE("Mobility + Balance"),
+            BALANCE_LOW_CUBE("Low Cube + Balance"),
+            MOBILITY_BALANCE_LOW_CUBE("Low Cube + Mobility + Balance");
+
+            private final String displayName;
+
+            @Override
+            public String getDisplayName() {
+                return displayName;
+            }
+
+            MODES(String displayName) {
+                this.displayName = displayName;
+            }
+        }
+
+        public static final DashboardChooser<MODES> MODE_CHOOSER =
+                DashboardChooser.fromEnum(MODES.class, MODES.NOTHING);
+    }
+
     public static final class TELEOP_DRIVE_MODES {
         public static enum LINEAR_MODIFIER implements DashboardChooser.Option {
             FULL(1, "Full"),
@@ -160,5 +187,7 @@ public class Config {
                 .publishSendable(
                         "teleopDriveAngularRampRateChooser",
                         TELEOP_DRIVE_MODES.ANGULAR_RAMP_RATE_CHOOSER);
+
+        HighLevelLogger.getInstance().publishSendable("autoModeChooser", AUTO_MODES.MODE_CHOOSER);
     }
 }

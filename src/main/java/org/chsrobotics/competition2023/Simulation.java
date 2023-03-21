@@ -33,7 +33,6 @@ import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
 import org.chsrobotics.competition2023.subsystems.Vision;
 import org.chsrobotics.lib.math.UtilityMath;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
-import org.chsrobotics.lib.models.DoubleJointedArmModel;
 
 public class Simulation {
     private static final Simulation instance = new Simulation();
@@ -56,31 +55,16 @@ public class Simulation {
                     Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS,
                     null);
 
-    private final DoubleJointedArmModel armSim =
-            new DoubleJointedArmModel(
-                    Constants.SUBSYSTEM.ARM.LOCAL_MASS_KG,
-                    Constants.SUBSYSTEM.ARM.LOCAL_COM_POSITION_FROM_ROOT_METERS,
-                    Constants.SUBSYSTEM.ARM.LOCAL_MOMENT_ABOUT_COM,
-                    Constants.SUBSYSTEM.ARM.LOCAL_LENGTH_METERS,
-                    DCMotor.getNEO(2)
-                            .withReduction(
-                                    Constants.SUBSYSTEM.ARM.LOCAL_MOTORS_CONVERSION_HELPER
-                                            .toDoubleRatioOutputToInput()),
-                    Constants.SUBSYSTEM.ARM.DISTAL_MASS_KG,
-                    Constants.SUBSYSTEM.ARM.DISTAL_COM_POSITION_FROM_ROOT_METERS,
-                    Constants.SUBSYSTEM.ARM.DISTAL_MOMENT_ABOUT_COM,
-                    DCMotor.getNEO(1)
-                            .withReduction(
-                                    Constants.SUBSYSTEM.ARM.DISTAL_MOTOR_CONVERSION_HELPER
-                                            .toDoubleRatioOutputToInput()));
-
     private Vector<N2> armInputVoltages = VecBuilder.fill(0, 0);
 
     private Matrix<N2, N2> armState = new Matrix<>(N2.instance, N2.instance);
 
     private final DifferentiatingFilter drivetrainAccelerationFilter = new DifferentiatingFilter();
 
-    private Simulation() {}
+    private Simulation() {
+        armState.set(0, 0, Math.PI / 2);
+        armState.set(0, 1, (3 * Math.PI) / 4);
+    }
 
     public static Simulation getInstance() {
         return instance;
@@ -101,7 +85,7 @@ public class Simulation {
         DifferentialDrivetrainSim currentSim =
                 Drivetrain.getInstance().getShifterSlow() ? slowDrivetrainSim : fastDrivetrainSim;
 
-        armState = armSim.simulate(armState, armInputVoltages, 0.02);
+        armState = Constants.SUBSYSTEM.ARM.ARM_MODEL.simulate(armState, armInputVoltages, 0.02);
 
         totalCurrentDraw += currentSim.getCurrentDrawAmps();
 

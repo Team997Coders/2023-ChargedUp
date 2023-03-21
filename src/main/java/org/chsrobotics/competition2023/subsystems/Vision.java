@@ -40,31 +40,33 @@ import org.photonvision.targeting.TargetCorner;
 public class Vision implements Subsystem {
     private static final Vision instance = new Vision();
 
-    private final PhotonCamera cameraA = new PhotonCamera(VISION.AT_CAMERA_A_NAME);
+    private final PhotonCamera cameraA = new PhotonCamera(VISION.AT_CAMERA_FRONT_NAME);
 
-    private final PhotonCamera cameraB = new PhotonCamera(VISION.AT_CAMERA_B_NAME);
+    private final PhotonCamera cameraB = new PhotonCamera(VISION.AT_CAMERA_BACK_NAME);
 
     private final PhotonPoseEstimator camAEstimator;
     private final PhotonPoseEstimator camBEstimator;
 
-    private EstimatedRobotPose camAEstimatedPose = new EstimatedRobotPose(new Pose3d(), 0);
-    private EstimatedRobotPose camBEstimatedPose = new EstimatedRobotPose(new Pose3d(), 0);
+    private EstimatedRobotPose frontCamEstimatedPose =
+            new EstimatedRobotPose(new Pose3d(), 0, List.of());
+    private EstimatedRobotPose backCamEstimatedPose =
+            new EstimatedRobotPose(new Pose3d(), 0, List.of());
 
-    private final SimVisionSystem simCameraA =
+    private final SimVisionSystem simFrontCamera =
             new SimVisionSystem(
-                    VISION.AT_CAMERA_A_NAME,
+                    VISION.AT_CAMERA_FRONT_NAME,
                     VISION.AT_CAMERAS_DIAG_FOV_DEGREES,
-                    VISION.ROBOT_TO_AT_CAMERA_A,
+                    VISION.ROBOT_TO_AT_FRONT_CAMERA,
                     9970,
                     VISION.AT_CAMERAS_HORIZONTAL_RESOLUTION_PX,
                     VISION.AT_CAMERAS_VERTICAL_RESOLUTION_PX,
                     VISION.AT_CAMERAS_SIMULATION_MIN_TARGET_AREA);
 
-    private final SimVisionSystem simCameraB =
+    private final SimVisionSystem simBackCamera =
             new SimVisionSystem(
-                    VISION.AT_CAMERA_B_NAME,
+                    VISION.AT_CAMERA_BACK_NAME,
                     VISION.AT_CAMERAS_DIAG_FOV_DEGREES,
-                    VISION.ROBOT_TO_AT_CAMERA_B,
+                    VISION.ROBOT_TO_AT_BACK_CAMERA,
                     9970,
                     VISION.AT_CAMERAS_HORIZONTAL_RESOLUTION_PX,
                     VISION.AT_CAMERAS_VERTICAL_RESOLUTION_PX,
@@ -74,45 +76,45 @@ public class Vision implements Subsystem {
 
     private final String subdirString = "vision";
 
-    private final Logger<Boolean> aHasTargetsLogger =
-            new Logger<>("cameraAHasTargets", subdirString);
+    private final Logger<Boolean> frontHasTargetsLogger =
+            new Logger<>("cameraFrontHasTargets", subdirString);
 
-    private final Logger<Boolean> bHasTargetsLogger =
-            new Logger<>("cameraBHasTargets", subdirString);
+    private final Logger<Boolean> backHasTargetsLogger =
+            new Logger<>("cameraBackHasTargets", subdirString);
 
-    private final Logger<Integer[]> aTrackedTargetIDsLogger =
-            new Logger<>("cameraATracketTargetIDs", subdirString);
+    private final Logger<Integer[]> frontTrackedTargetIDsLogger =
+            new Logger<>("cameraFrontTracketTargetIDs", subdirString);
 
-    private final Logger<Integer[]> bTrackedTargetIDsLogger =
-            new Logger<>("cameraBTrackedTargetIDs", subdirString);
+    private final Logger<Integer[]> backTrackedTargetIDsLogger =
+            new Logger<>("cameraBackTrackedTargetIDs", subdirString);
 
-    private final Logger<Double> aLatencyLogger =
-            new Logger<>("cameraAPipelineLatency_s", subdirString);
+    private final Logger<Double> frontLatencyLogger =
+            new Logger<>("cameraFrontPipelineLatency_s", subdirString);
 
-    private final Logger<Double> bLatencyLogger =
-            new Logger<>("cameraBPipelineLatency_s", subdirString);
+    private final Logger<Double> backLatencyLogger =
+            new Logger<>("cameraBackPipelineLatency_s", subdirString);
 
-    private final Logger<Double[]> aTargetCornersXLogger =
-            new Logger<>("cameraATargetCornersX_px", subdirString);
-    private final Logger<Double[]> aTargetCornersYLogger =
-            new Logger<>("cameraATargetCornersY_px", subdirString);
+    private final Logger<Double[]> frontTargetCornersXLogger =
+            new Logger<>("cameraFrontTargetCornersX_px", subdirString);
+    private final Logger<Double[]> frontTargetCornersYLogger =
+            new Logger<>("cameraFrontTargetCornersY_px", subdirString);
 
-    private final Logger<Double[]> bTargetCornersXLogger =
-            new Logger<>("cameraBTargetCornersX_px", subdirString);
-    private final Logger<Double[]> bTargetCornersYLogger =
-            new Logger<>("cameraBTargetCornersY_px", subdirString);
+    private final Logger<Double[]> backTargetCornersXLogger =
+            new Logger<>("cameraBackTargetCornersX_px", subdirString);
+    private final Logger<Double[]> backTargetCornersYLogger =
+            new Logger<>("cameraBackTargetCornersY_px", subdirString);
 
-    private final Logger<Integer> aSetPipelineLogger =
-            new Logger<>("cameraASetPipelineIndex", subdirString);
+    private final Logger<Integer> frontSetPipelineLogger =
+            new Logger<>("cameraFrontSetPipelineIndex", subdirString);
 
-    private final Logger<Integer> bSetPipelineLogger =
-            new Logger<>("cameraBSetPipelineIndex", subdirString);
+    private final Logger<Integer> backSetPipelineLogger =
+            new Logger<>("cameraBackSetPipelineIndex", subdirString);
 
-    private final Logger<Double[]> camAEstimatedPoseLogger =
-            new Logger<>("camAEstimatedPose_m_m_rad", subdirString);
+    private final Logger<Double[]> camFrontEstimatedPoseLogger =
+            new Logger<>("camFrontEstimatedPose_m_m_rad", subdirString);
 
-    private final Logger<Double[]> camBEstimatedPoseLogger =
-            new Logger<>("camBEstimatedPose_m_m_rad", subdirString);
+    private final Logger<Double[]> camBackEstimatedPoseLogger =
+            new Logger<>("camBackEstimatedPose_m_m_rad", subdirString);
 
     private Vision() {
         register();
@@ -126,22 +128,22 @@ public class Vision implements Subsystem {
             layout = new AprilTagFieldLayout(List.of(), 1, 1);
         }
 
-        simCameraA.addVisionTargets(layout);
-        simCameraB.addVisionTargets(layout);
+        simFrontCamera.addVisionTargets(layout);
+        simBackCamera.addVisionTargets(layout);
 
         camAEstimator =
                 new PhotonPoseEstimator(
                         layout,
                         Constants.SUBSYSTEM.VISION.DEFAULT_POSE_STRATEGY,
                         cameraA,
-                        Constants.SUBSYSTEM.VISION.ROBOT_TO_AT_CAMERA_A);
+                        Constants.SUBSYSTEM.VISION.ROBOT_TO_AT_FRONT_CAMERA);
 
         camBEstimator =
                 new PhotonPoseEstimator(
                         layout,
                         Constants.SUBSYSTEM.VISION.DEFAULT_POSE_STRATEGY,
                         cameraB,
-                        Constants.SUBSYSTEM.VISION.ROBOT_TO_AT_CAMERA_B);
+                        Constants.SUBSYSTEM.VISION.ROBOT_TO_AT_BACK_CAMERA);
     }
 
     public static Vision getInstance() {
@@ -173,7 +175,7 @@ public class Vision implements Subsystem {
     }
 
     public Tuple2<EstimatedRobotPose> getCurrentPoseEstimates() {
-        return Tuple2.of(camAEstimatedPose, camBEstimatedPose);
+        return Tuple2.of(frontCamEstimatedPose, backCamEstimatedPose);
     }
 
     @Override
@@ -185,25 +187,25 @@ public class Vision implements Subsystem {
         var camBEstimate = camBEstimator.update();
 
         if (camAEstimate.isPresent()) {
-            camAEstimatedPose = camAEstimate.get();
+            frontCamEstimatedPose = camAEstimate.get();
 
-            camAEstimatedPoseLogger.update(
+            camFrontEstimatedPoseLogger.update(
                     new Double[] {
-                        camAEstimatedPose.estimatedPose.getX(),
-                        camAEstimatedPose.estimatedPose.getY(),
-                        camAEstimatedPose.estimatedPose.toPose2d().getRotation().getRadians()
+                        frontCamEstimatedPose.estimatedPose.getX(),
+                        frontCamEstimatedPose.estimatedPose.getY(),
+                        frontCamEstimatedPose.estimatedPose.toPose2d().getRotation().getRadians()
                     });
-        } else camAEstimatedPose = null;
+        } else frontCamEstimatedPose = null;
 
         if (camBEstimate.isPresent()) {
-            camBEstimatedPose = camBEstimate.get();
-            camBEstimatedPoseLogger.update(
+            backCamEstimatedPose = camBEstimate.get();
+            camBackEstimatedPoseLogger.update(
                     new Double[] {
-                        camBEstimatedPose.estimatedPose.getX(),
-                        camBEstimatedPose.estimatedPose.getY(),
-                        camBEstimatedPose.estimatedPose.toPose2d().getRotation().getRadians()
+                        backCamEstimatedPose.estimatedPose.getX(),
+                        backCamEstimatedPose.estimatedPose.getY(),
+                        backCamEstimatedPose.estimatedPose.toPose2d().getRotation().getRadians()
                     });
-        } else camBEstimatedPose = null;
+        } else backCamEstimatedPose = null;
 
         var aCornersX = new ArrayList<>();
         var aCornersY = new ArrayList<>();
@@ -229,28 +231,28 @@ public class Vision implements Subsystem {
             }
         }
 
-        aTargetCornersXLogger.update(aCornersX.toArray(new Double[] {}));
-        aTargetCornersYLogger.update(aCornersY.toArray(new Double[] {}));
-        bTargetCornersXLogger.update(bCornersX.toArray(new Double[] {}));
-        bTargetCornersYLogger.update(bCornersY.toArray(new Double[] {}));
+        frontTargetCornersXLogger.update(aCornersX.toArray(new Double[] {}));
+        frontTargetCornersYLogger.update(aCornersY.toArray(new Double[] {}));
+        backTargetCornersXLogger.update(bCornersX.toArray(new Double[] {}));
+        backTargetCornersYLogger.update(bCornersY.toArray(new Double[] {}));
 
-        aTrackedTargetIDsLogger.update(aTargetIDs.toArray(new Integer[] {}));
-        bTrackedTargetIDsLogger.update(bTargetIDs.toArray(new Integer[] {}));
+        frontTrackedTargetIDsLogger.update(aTargetIDs.toArray(new Integer[] {}));
+        backTrackedTargetIDsLogger.update(bTargetIDs.toArray(new Integer[] {}));
 
-        aLatencyLogger.update(getCameraAPipelineLatencySeconds());
-        bLatencyLogger.update(getCameraBPipelineLatencySeconds());
+        frontLatencyLogger.update(getCameraAPipelineLatencySeconds());
+        backLatencyLogger.update(getCameraBPipelineLatencySeconds());
 
-        aHasTargetsLogger.update(cameraA.getLatestResult().hasTargets());
-        bHasTargetsLogger.update(cameraB.getLatestResult().hasTargets());
+        frontHasTargetsLogger.update(cameraA.getLatestResult().hasTargets());
+        backHasTargetsLogger.update(cameraB.getLatestResult().hasTargets());
 
-        aSetPipelineLogger.update(cameraA.getPipelineIndex());
-        bSetPipelineLogger.update(cameraB.getPipelineIndex());
+        frontSetPipelineLogger.update(cameraA.getPipelineIndex());
+        backSetPipelineLogger.update(cameraB.getPipelineIndex());
     }
 
     @Override
     public void simulationPeriodic() {
-        simCameraA.processFrame(simPose);
-        simCameraB.processFrame(simPose);
+        simFrontCamera.processFrame(simPose);
+        simBackCamera.processFrame(simPose);
     }
 
     public void setSimState(Pose3d simPose) {

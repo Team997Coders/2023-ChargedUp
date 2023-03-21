@@ -17,9 +17,9 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.subsystems;
 
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.Robot;
@@ -42,6 +42,9 @@ public class Arm implements Subsystem {
 
     private final CANSparkMax rightLocalNEO =
             new CANSparkMax(Constants.SUBSYSTEM.ARM.RIGHT_LOCAL_NEO_CAN_ID, MotorType.kBrushless);
+
+    private final DigitalInput reverseLimitSwitch =
+            new DigitalInput(Constants.SUBSYSTEM.ARM.REVERSE_LIMIT_SWITCH_CHANNEL);
 
     private final AnalogPotentiometer distalPotentiometer =
             new AnalogPotentiometer(Constants.SUBSYSTEM.ARM.DISTAL_POTENTIOMETER_ANALOG_CHANNEL);
@@ -90,6 +93,14 @@ public class Arm implements Subsystem {
     private final Logger<Double> leftLocalNEOTempLogger = factory.getLogger("localNeoATemp_C");
     private final Logger<Double> rightLocalNEOTempLogger = factory.getLogger("localNeoBTemp_c");
 
+    private final Logger<Boolean> thermalWarningLogger =
+            new Logger<>("thermalWarning", subdirString);
+    private final Logger<Boolean> currentWarningLogger =
+            new Logger<>("currentWarning", subdirString);
+
+    private final Logger<Boolean> reverseLimitSwitchLogger =
+            new Logger<>("reverseLimitSwitch", subdirString);
+
     private double localVelocity = 0;
     private double distalVelocity = 0;
 
@@ -106,13 +117,13 @@ public class Arm implements Subsystem {
         leftLocalNEO.setInverted(Constants.SUBSYSTEM.ARM.LEFT_LOCAL_NEO_INVERTED);
         rightLocalNEO.setInverted(Constants.SUBSYSTEM.ARM.RIGHT_LOCAL_NEO_INVERTED);
 
-        // distalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
-        // leftLocalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
-        // rightLocalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
+        distalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
+        leftLocalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
+        rightLocalNEO.setIdleMode(Constants.SUBSYSTEM.ARM.IDLE_MODE);
 
-        distalNEO.setIdleMode(IdleMode.kCoast);
-        leftLocalNEO.setIdleMode(IdleMode.kCoast);
-        rightLocalNEO.setIdleMode(IdleMode.kCoast);
+        distalNEO.clearFaults();
+        leftLocalNEO.clearFaults();
+        rightLocalNEO.clearFaults();
     }
 
     public double getDistalAngleRadians() {
@@ -148,6 +159,12 @@ public class Arm implements Subsystem {
         rightLocalNEO.setVoltage(localVoltage);
 
         Simulation.getInstance().setArmInputs(localVoltage, distalVoltage);
+    }
+
+    public boolean getReverseLimitSwitch() {
+        if (Constants.SUBSYSTEM.ARM.REVERSE_LIMIT_SWITCH_INVERTED) {
+            return !reverseLimitSwitch.get();
+        } else return reverseLimitSwitch.get();
     }
 
     public double getDistalVelocityRadiansPerSecond() {
@@ -196,6 +213,14 @@ public class Arm implements Subsystem {
                             getLocalAngleRadians(), previousLocalPosition);
         }
 
+        if (getReverseLimitSwitch()
+                || getDistalAngleRadians() >= Constants.SUBSYSTEM.ARM.DISTAL_MAX_ANGLE
+                || getDistalAngleRadians() <= Constants.SUBSYSTEM.ARM.DISTAL_MIN_ANGLE
+                || getLocalAngleRadians() >= Constants.SUBSYSTEM.ARM.LOCAL_MAX_ANGLE
+                || getLocalAngleRadians() <= Constants.SUBSYSTEM.ARM.LOCAL_MIN_ANGLE) {
+            setVoltages(0, 0);
+        }
+
         distalVelocity = distalDeltaPosition / 0.02;
         localVelocity = localDeltaPostion / 0.02;
 
@@ -221,6 +246,22 @@ public class Arm implements Subsystem {
         distalNeoTempLogger.update(distalNEO.getMotorTemperature());
         leftLocalNEOTempLogger.update(leftLocalNEO.getMotorTemperature());
         rightLocalNEOTempLogger.update(rightLocalNEO.getMotorTemperature());
+
+        double thresholdI = Constants.GLOBAL.CURRENT_WARNING_THRESHOLD_A;
+
+        currentWarningLogger.update(
+                distalNEO.getOutputCurrent() >= thresholdI
+                        || rightLocalNEO.getOutputCurrent() >= thresholdI
+                        || leftLocalNEO.getOutputCurrent() >= thresholdI);
+
+        double thresholdC = Constants.GLOBAL.THERMAL_WARNING_THRESHOLD_C;
+
+        thermalWarningLogger.update(
+                distalNEO.getMotorTemperature() >= thresholdC
+                        || rightLocalNEO.getMotorTemperature() >= thresholdC
+                        || leftLocalNEO.getMotorTemperature() >= thresholdC);
+
+        reverseLimitSwitchLogger.update(getReverseLimitSwitch());
     }
 
     public static Arm getInstance() {

@@ -14,29 +14,33 @@ See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. 
 If not, see <https://www.gnu.org/licenses/>.
 */
-package org.chsrobotics.competition2023.commands;
+package org.chsrobotics.competition2023.commands.arm;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import org.chsrobotics.competition2023.subsystems.Grabber;
-import org.chsrobotics.lib.input.JoystickButton;
+import org.chsrobotics.competition2023.subsystems.Arm;
+import org.chsrobotics.lib.input.JoystickAxis;
 
-public class SimpleGrabberTest extends CommandBase {
-    private final Grabber grabber;
-    private final JoystickButton toggle;
+public class SimpleArmTest extends CommandBase {
+    private final Arm arm;
 
-    private boolean lastState = false;
+    private final JoystickAxis distalInput;
+    private final JoystickAxis localInput;
 
-    public SimpleGrabberTest(Grabber grabber, JoystickButton toggle) {
-        addRequirements(grabber);
-        this.grabber = grabber;
+    private final double scaling;
 
-        this.toggle = toggle;
+    public SimpleArmTest(
+            Arm arm, JoystickAxis distalInput, JoystickAxis localInput, double scaling) {
+        addRequirements(arm);
+        this.arm = arm;
+
+        this.distalInput = distalInput;
+        this.localInput = localInput;
+
+        this.scaling = scaling;
     }
 
     @Override
     public void execute() {
-        if (toggle.getAsBoolean() && !lastState) grabber.setSolenoid(!grabber.isClosed());
-
-        lastState = toggle.getAsBoolean();
+        arm.setVoltages(localInput.getValue() * scaling, distalInput.getValue() * scaling);
     }
 }

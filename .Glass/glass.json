@@ -1,0 +1,26 @@
+{
+  "NetworkTables": {
+    "transitory": {
+      "arm": {
+        "open": true
+      }
+    },
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/pv_back Sim Field": "Field2d",
+      "/SmartDashboard/pv_front Sim Field": "Field2d",
+      "/sendables/RobotPose": "Field2d",
+      "/sendables/armVis": "Mechanism2d",
+      "/sendables/autoModeChooser": "String Chooser",
+      "/sendables/teleopDriveAngularModifierChooser": "String Chooser",
+      "/sendables/teleopDriveAngularRampRateChooser": "String Chooser",
+      "/sendables/teleopDriveLinearModifierChooser": "String Chooser",
+      "/sendables/teleopDriveLinearRampRateChooser": "String Chooser",
+      "/sendables/teleopDriveModeChooser": "String Chooser"
+    }
+  },
+  "NetworkTables Settings": {
+    "mode": "Client (NT4)",
+    "serverTeam": "10.9.97.2"
+  }
+}

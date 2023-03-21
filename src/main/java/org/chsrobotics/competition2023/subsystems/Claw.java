@@ -21,11 +21,11 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.lib.telemetry.Logger;
 
-public class Grabber implements Subsystem {
-    private static final Grabber instance = new Grabber();
+public class Claw implements Subsystem {
+    private static final Claw instance = new Claw();
 
     private final Solenoid solenoid =
-            Pneumatics.getInstance().getSolenoid(Constants.SUBSYSTEM.GRABBER.SOLENOID_CHANNEL);
+            Pneumatics.getInstance().getSolenoid(Constants.SUBSYSTEM.CLAW.SOLENOID_CHANNEL);
 
     private final String subdirString = "grabber";
 
@@ -33,11 +33,11 @@ public class Grabber implements Subsystem {
 
     private boolean isClosed = false;
 
-    private Grabber() {
+    private Claw() {
         register();
     }
 
-    public static Grabber getInstance() {
+    public static Claw getInstance() {
         return instance;
     }
 
@@ -53,7 +53,7 @@ public class Grabber implements Subsystem {
     public void periodic() {
         closedLogger.update(isClosed);
 
-        if (isClosed) solenoid.set(!Constants.SUBSYSTEM.GRABBER.SOLENOID_INVERTED);
-        else solenoid.set(Constants.SUBSYSTEM.GRABBER.SOLENOID_INVERTED);
+        if (isClosed) solenoid.set(!Constants.SUBSYSTEM.CLAW.SOLENOID_INVERTED);
+        else solenoid.set(Constants.SUBSYSTEM.CLAW.SOLENOID_INVERTED);
     }
 }

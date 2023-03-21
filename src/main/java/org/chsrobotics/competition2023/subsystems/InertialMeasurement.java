@@ -17,15 +17,11 @@ If not, see <https://www.gnu.org/licenses/>.
 package org.chsrobotics.competition2023.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.Robot;
 import org.chsrobotics.lib.math.UtilityMath;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
-import org.chsrobotics.lib.math.filters.IntegratingFilter;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.telemetry.Logger;
 
@@ -48,22 +44,6 @@ public class InertialMeasurement implements Subsystem {
     private final DifferentiatingFilter yawAFilter = new DifferentiatingFilter();
     private final DifferentiatingFilter rollAFilter = new DifferentiatingFilter();
 
-    private final DifferentiatingFilter pitchJFilter = new DifferentiatingFilter();
-    private final DifferentiatingFilter yawJFilter = new DifferentiatingFilter();
-    private final DifferentiatingFilter rollJFilter = new DifferentiatingFilter();
-
-    private final DifferentiatingFilter xJFilter = new DifferentiatingFilter();
-    private final DifferentiatingFilter yJFilter = new DifferentiatingFilter();
-    private final DifferentiatingFilter zJFilter = new DifferentiatingFilter();
-
-    private final IntegratingFilter xVFilter = new IntegratingFilter(0);
-    private final IntegratingFilter yVFilter = new IntegratingFilter(0);
-    private final IntegratingFilter zVFilter = new IntegratingFilter(0);
-
-    private final IntegratingFilter xFilter = new IntegratingFilter(0);
-    private final IntegratingFilter yFilter = new IntegratingFilter(0);
-    private final IntegratingFilter zFilter = new IntegratingFilter(0);
-
     private final String subdirString = "inertialMeasurement";
 
     private final Logger<Boolean> isCalibratingLogger = new Logger<>("isCalibrating", subdirString);
@@ -85,25 +65,9 @@ public class InertialMeasurement implements Subsystem {
     private final Logger<Double> rollALogger =
             new Logger<>("rollAcceleration_rad_p_s^2", subdirString);
 
-    private final Logger<Double> pitchJLogger = new Logger<>("pitchJerk_rad_p_s^3", subdirString);
-    private final Logger<Double> yawJLogger = new Logger<>("yawJerk_rad_p_s^3", subdirString);
-    private final Logger<Double> rollJLogger = new Logger<>("rollJerk_rad_p_s^3", subdirString);
-
     private final Logger<Double> xALogger = new Logger<>("xAcceleration_m_p_s^2", subdirString);
     private final Logger<Double> yALogger = new Logger<>("yAcceleration_m_p_s^2", subdirString);
     private final Logger<Double> zALogger = new Logger<>("zAcceleration_m_p_s^2", subdirString);
-
-    private final Logger<Double> xJLogger = new Logger<>("xJerk_m_p_s^3", subdirString);
-    private final Logger<Double> yJLogger = new Logger<>("yJerk_m_p_s^3", subdirString);
-    private final Logger<Double> zJLogger = new Logger<>("zJerk_m_p_s^3", subdirString);
-
-    private final Logger<Double> xVLogger = new Logger<>("xVelocity_m_p_s", subdirString);
-    private final Logger<Double> yVLogger = new Logger<>("yVelocity_m_p_s", subdirString);
-    private final Logger<Double> zVLogger = new Logger<>("zVelocity_m_p_s", subdirString);
-
-    private final Logger<Double> xLogger = new Logger<>("x_m", subdirString);
-    private final Logger<Double> yLogger = new Logger<>("y_m", subdirString);
-    private final Logger<Double> zLogger = new Logger<>("z_m", subdirString);
 
     private final Logger<Double> temperatureLogger = new Logger<>("temperature_C", subdirString);
 
@@ -114,10 +78,6 @@ public class InertialMeasurement implements Subsystem {
     private double simXAccel = 0;
     private double simYAccel = 0;
     private double simZAccel = 0;
-
-    private Rotation3d rotation = new Rotation3d();
-
-    private Translation3d accel = new Translation3d();
 
     private InertialMeasurement() {
         register();
@@ -162,22 +122,6 @@ public class InertialMeasurement implements Subsystem {
         pitchAFilter.reset();
         yawAFilter.reset();
         rollAFilter.reset();
-
-        pitchJFilter.reset();
-        yawJFilter.reset();
-        rollJFilter.reset();
-
-        xJFilter.reset();
-        yJFilter.reset();
-        zJFilter.reset();
-
-        xVFilter.reset();
-        yVFilter.reset();
-        zVFilter.reset();
-
-        xFilter.reset();
-        yFilter.reset();
-        zFilter.reset();
     }
 
     public void setSimState(
@@ -199,7 +143,8 @@ public class InertialMeasurement implements Subsystem {
     }
 
     public double getPitchRadians() {
-        return rotation.getY();
+        // WHY DOES THE NAVX DO THIS
+        return Robot.isReal() ? headingDegreesToAngleRadians(navX.getRoll()) : simPitchRadians;
     }
 
     public double getPitchAngularVelocityRadiansPerSecond() {
@@ -210,12 +155,8 @@ public class InertialMeasurement implements Subsystem {
         return pitchAFilter.getCurrentOutput();
     }
 
-    public double getPitchAngularJerkRadiansPerSecondCubed() {
-        return pitchJFilter.getCurrentOutput();
-    }
-
     public double getYawRadians() {
-        return rotation.getZ();
+        return Robot.isReal() ? headingDegreesToAngleRadians(navX.getYaw()) : simYawRadians;
     }
 
     public double getYawAngularVelocityRadiansPerSecond() {
@@ -226,12 +167,9 @@ public class InertialMeasurement implements Subsystem {
         return yawAFilter.getCurrentOutput();
     }
 
-    public double getYawAngularJerkRadiansPerSecondCubed() {
-        return yawJFilter.getCurrentOutput();
-    }
-
     public double getRollRadians() {
-        return rotation.getX();
+        // WHY IS THE NAVX LIKE THIS
+        return Robot.isReal() ? headingDegreesToAngleRadians(navX.getPitch()) : simRollRadians;
     }
 
     public double getRollAngularVelocityRadiansPerSecond() {
@@ -242,56 +180,16 @@ public class InertialMeasurement implements Subsystem {
         return rollAFilter.getCurrentOutput();
     }
 
-    public double getRollAngularJerkRadiansPerSecondCubed() {
-        return rollJFilter.getCurrentOutput();
-    }
-
     public double getXAccelerationMetersPerSecondSquared() {
-        return accel.getX();
-    }
-
-    public double getXJerkMetersPerSecondCubed() {
-        return xJFilter.getCurrentOutput();
-    }
-
-    public double getRobotFrameXVelocityMetersPerSecond() {
-        return xVFilter.getCurrentOutput();
-    }
-
-    public double getRobotFrameXMeters() {
-        return xFilter.getCurrentOutput();
+        return Robot.isReal() ? gToMetersPerSecondSquared(navX.getWorldLinearAccelX()) : simXAccel;
     }
 
     public double getYAccelerationMetersPerSecondSquared() {
-        return accel.getY();
-    }
-
-    public double getYJerkMetersPerSecondCubed() {
-        return yJFilter.getCurrentOutput();
-    }
-
-    public double getRobotFrameYVelocityMetersPerSecond() {
-        return yVFilter.getCurrentOutput();
-    }
-
-    public double getRobotFrameYMeters() {
-        return yFilter.getCurrentOutput();
+        return Robot.isReal() ? gToMetersPerSecondSquared(navX.getWorldLinearAccelY()) : simYAccel;
     }
 
     public double getZAccelerationMetersPerSecondSquared() {
-        return accel.getZ();
-    }
-
-    public double getZJerkMetersPerSecondCubed() {
-        return zJFilter.getCurrentOutput();
-    }
-
-    public double getRobotFrameZVelocityMetersPerSecond() {
-        return zVFilter.getCurrentOutput();
-    }
-
-    public double getRobotFrameZMeters() {
-        return zFilter.getCurrentOutput();
+        return Robot.isReal() ? gToMetersPerSecondSquared(navX.getWorldLinearAccelZ()) : simZAccel;
     }
 
     private double headingDegreesToAngleRadians(double headingDegrees) {
@@ -304,31 +202,6 @@ public class InertialMeasurement implements Subsystem {
 
     @Override
     public void periodic() {
-        double relPitch =
-                Robot.isReal() ? headingDegreesToAngleRadians(navX.getPitch()) : simPitchRadians;
-
-        double relRoll =
-                Robot.isReal() ? headingDegreesToAngleRadians(navX.getRoll()) : simRollRadians;
-
-        double relYaw =
-                Robot.isReal() ? headingDegreesToAngleRadians(navX.getYaw()) : simYawRadians;
-
-        Rotation3d relRot = new Rotation3d(relRoll, relPitch, relYaw);
-
-        rotation = relRot.plus(Constants.SUBSYSTEM.INERTIAL_MEASUREMENT.ROBOT_TO_NAVX);
-
-        double relX = Robot.isReal() ? gToMetersPerSecondSquared(navX.getRawAccelX()) : simXAccel;
-
-        double relY = Robot.isReal() ? gToMetersPerSecondSquared(navX.getRawAccelY()) : simYAccel;
-
-        double relZ = Robot.isReal() ? gToMetersPerSecondSquared(navX.getRawAccelZ()) : simZAccel;
-
-        Translation3d accelsAsTranslation = new Translation3d(relX, relY, relZ);
-
-        accel =
-                accelsAsTranslation.rotateBy(
-                        Constants.SUBSYSTEM.INERTIAL_MEASUREMENT.ROBOT_TO_NAVX);
-
         isCalibratingLogger.update(isCalibrating());
         hasCalibratedLogger.update(hasCalibrated());
 
@@ -355,25 +228,9 @@ public class InertialMeasurement implements Subsystem {
         yawALogger.update(yawAFilter.calculate(yawVelocity));
         rollALogger.update(rollAFilter.calculate(rollVelocity));
 
-        pitchJLogger.update(pitchJFilter.calculate(pitchAFilter.getCurrentOutput()));
-        yawJLogger.update(yawJFilter.calculate(yawAFilter.getCurrentOutput()));
-        rollJLogger.update(rollJFilter.calculate(rollAFilter.getCurrentOutput()));
-
         xALogger.update(getXAccelerationMetersPerSecondSquared());
         yALogger.update(getYAccelerationMetersPerSecondSquared());
         zALogger.update(getZAccelerationMetersPerSecondSquared());
-
-        xJLogger.update(xJFilter.calculate(getXAccelerationMetersPerSecondSquared()));
-        yJLogger.update(yJFilter.calculate(getYAccelerationMetersPerSecondSquared()));
-        zJLogger.update(zJFilter.calculate(getZAccelerationMetersPerSecondSquared()));
-
-        xVLogger.update(xVFilter.calculate(getXAccelerationMetersPerSecondSquared()));
-        yVLogger.update(yVFilter.calculate(getYAccelerationMetersPerSecondSquared()));
-        zVLogger.update(zVFilter.calculate(getZAccelerationMetersPerSecondSquared()));
-
-        xLogger.update(xFilter.calculate(xVFilter.getCurrentOutput()));
-        yLogger.update(yFilter.calculate(yVFilter.getCurrentOutput()));
-        zLogger.update(zFilter.calculate(zVFilter.getCurrentOutput()));
 
         temperatureLogger.update(Robot.isReal() ? (double) navX.getTempC() : 0);
     }

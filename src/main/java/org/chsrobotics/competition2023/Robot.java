@@ -16,36 +16,27 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023;
 
-import com.pathplanner.lib.PathConstraints;
-import com.pathplanner.lib.PathPlanner;
-import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import java.io.File;
-import org.chsrobotics.competition2023.commands.SimpleGrabberTest;
-import org.chsrobotics.competition2023.commands.TeleopDrive;
-import org.chsrobotics.competition2023.commands.TrajectoryFollow;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import org.chsrobotics.competition2023.commands.ClawCommand;
 import org.chsrobotics.competition2023.commands.arm.ArmSetpointControl;
+import org.chsrobotics.competition2023.commands.arm.JacobianControl;
 import org.chsrobotics.competition2023.commands.arm.UpdateArmVis;
+import org.chsrobotics.competition2023.commands.drivetrain.TeleopDrive;
 import org.chsrobotics.competition2023.subsystems.Arm;
+import org.chsrobotics.competition2023.subsystems.Claw;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
-import org.chsrobotics.competition2023.subsystems.Grabber;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
-import org.chsrobotics.competition2023.util.CSpacePackageLoader;
-import org.chsrobotics.competition2023.util.CSpacePackageLoader.CSpacePackage;
 import org.chsrobotics.lib.input.JoystickAxis;
 import org.chsrobotics.lib.input.JoystickButton;
 import org.chsrobotics.lib.input.VirtualJoystickButton;
 import org.chsrobotics.lib.input.XboxController;
-import org.chsrobotics.lib.math.geometry.Polygon;
-import org.chsrobotics.lib.math.geometry.Vector2D;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
-import org.chsrobotics.lib.trajectory.planning.ConfigurationSpace;
-import org.chsrobotics.lib.trajectory.planning.ConfigurationSpace.ConfigurationSpaceDimension;
-import org.chsrobotics.lib.util.NodeGraph;
 import org.chsrobotics.lib.util.SRobot;
 
 public class Robot extends SRobot {
@@ -57,6 +48,10 @@ public class Robot extends SRobot {
 
     private static final Drivetrain drivetrain = Drivetrain.getInstance();
 
+    private static final Arm arm = Arm.getInstance();
+
+    private static final Claw claw = Claw.getInstance();
+
     private static final CommandScheduler scheduler = CommandScheduler.getInstance();
 
     private static long cycleCounter = 0;
@@ -65,23 +60,33 @@ public class Robot extends SRobot {
 
     private static final XboxController driverController = new XboxController(0);
     private static final XboxController operatorController = new XboxController(1);
-
-    private final Trajectory trajectory =
-            PathPlanner.loadPath("testTraj", new PathConstraints(3, 4));
-
-    private final TrajectoryFollow trajectoryFollow =
-            new TrajectoryFollow(drivetrain, trajectory, true);
+    private static final GenericHID buttonBox = new GenericHID(2);
 
     private final JoystickAxis driveLin = driverController.leftStickVerticalAxis();
     private final JoystickAxis driveRot = driverController.rightStickHorizontalAxis();
     private final JoystickButton shift =
             new VirtualJoystickButton(driverController.rightTriggerAxis(), 0.1, 1, false);
-    private final JoystickButton brake = driverController.BButton();
+    private final JoystickAxis slowAxis = driverController.leftTriggerAxis();
 
-    private final JoystickAxis localVoltage = operatorController.rightStickHorizontalAxis();
-    private final JoystickAxis distalVoltage = operatorController.leftStickHorizontalAxis();
+    private final JoystickAxis jacobianX = operatorController.leftStickHorizontalAxis();
+    private final JoystickAxis jacobianY = operatorController.leftStickVerticalAxis();
+    private final JoystickButton jacobianSlowMode = operatorController.rightBumperButton();
 
-    private final JoystickButton grabberButton = operatorController.XButton();
+    private final JoystickButton clawButton = operatorController.XButton();
+
+    private double localSetpoint;
+    private double distalSetpoint;
+    private double jacobianScaling;
+
+    private final Command jacobianControlCommand =
+            new ParallelCommandGroup(
+                    new JacobianControl(arm, jacobianX, jacobianY, () -> jacobianScaling),
+                    new UpdateArmVis(arm, () -> 0, () -> 0));
+
+    private final Command setpointControlCommand =
+            new ParallelCommandGroup(
+                    new ArmSetpointControl(arm, () -> localSetpoint, () -> distalSetpoint),
+                    new UpdateArmVis(arm, () -> localSetpoint, () -> distalSetpoint));
 
     @Override
     public void stateTransition(RobotState from, RobotState to) {
@@ -98,30 +103,19 @@ public class Robot extends SRobot {
             Config.publishChoosers();
 
             driveRot.setInverted(true);
-            driveLin.setInverted(false);
+            driveLin.setInverted(true);
 
             driveRot.addDeadband(0.05);
             driveLin.addDeadband(0.05);
 
-            localVoltage.addDeadband(0.1);
-            distalVoltage.addDeadband(0.1);
+            jacobianX.addDeadband(0.1);
+            jacobianY.addDeadband(0.1);
+
+            jacobianY.setInverted(true);
+            jacobianX.setInverted(true);
 
             uptimer.reset();
             uptimer.start();
-
-            NodeGraph<Vector2D> nodes = new NodeGraph<>();
-
-            CSpacePackage pack =
-                    new CSpacePackage(
-                            new ConfigurationSpace(
-                                    new ConfigurationSpaceDimension(
-                                            -Math.PI / 2, (3 * Math.PI) / 2, false),
-                                    new ConfigurationSpaceDimension(0, 2 * Math.PI, false),
-                                    new Polygon(new Vector2D(cycleCounter, cycleCounter))),
-                            nodes);
-
-            CSpacePackageLoader.writePackage(
-                    new File(Filesystem.getDeployDirectory(), "cspace/feb27.json"), pack);
 
             // have to schedule a dummy command to get the arm telemetry to show up in NT for
             // whatever reason-- this doesn't happen with other subsystems
@@ -132,7 +126,6 @@ public class Robot extends SRobot {
                                 public void run() {}
                             },
                             Arm.getInstance()));
-
         } else if (to == RobotState.TEST) {
             // test mode
             CommandScheduler.getInstance().cancelAll();
@@ -148,43 +141,50 @@ public class Robot extends SRobot {
             HighLevelLogger.getInstance().logMessage("Loop cycles: " + cycleCounter);
             HighLevelLogger.getInstance().logMessage("Uptime (s): " + uptimer.get());
         } else if (to == RobotState.TELEOPERATED) {
-            scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift, brake));
+            distalSetpoint = Arm.getInstance().getDistalAngleRadians();
+            localSetpoint = Arm.getInstance().getLocalAngleRadians();
 
-            scheduler.schedule(new SimpleGrabberTest(Grabber.getInstance(), grabberButton));
+            scheduler.schedule(new ClawCommand(claw, clawButton));
 
-            scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift, brake));
+            scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift, slowAxis));
 
-            // scheduler.schedule(
-            //        new ArmNavigate(
-            //                Arm.getInstance(),
-            //                Constants.COMMAND.ARM_NAVIGATE.FREE,
-            //                1,
-            //                1));
-
-            var axisH = operatorController.rightStickHorizontalAxis();
-
-            var axisV = operatorController.rightStickVerticalAxis();
-
-            axisH.addDeadband(0.05);
-
-            axisV.setInverted(true);
-            axisV.addDeadband(0.05);
-
-            // scheduler.schedule(
-            //        new CartesianControl(
-            //                Arm.getInstance(), axisH, axisV, operatorController.AButton()));
-
-            scheduler.schedule(
-                    new ArmSetpointControl(Arm.getInstance(), 1, 1),
-                    new UpdateArmVis(Arm.getInstance(), () -> 1, () -> 1));
+            scheduler.schedule(jacobianControlCommand);
 
         } else if (to == RobotState.AUTONOMOUS) {
-            scheduler.schedule(trajectoryFollow);
+            // scheduler.schedule(
+            //        Autos.getAutoCommand(Config.AUTO_MODES.MODE_CHOOSER.getSelected(),
+            // drivetrain));
         }
     }
 
     @Override
     public void periodic(RobotState state) {
+        if (jacobianSlowMode.getAsBoolean()) {
+            jacobianScaling = Constants.COMMAND.ARM_JACOBIAN_CONTROL.INPUT_SCALING_SLOW;
+        } else {
+            jacobianScaling = Constants.COMMAND.ARM_JACOBIAN_CONTROL.INPUT_SCALING_FULL;
+        }
+
+        if (buttonBox.getRawButton(5)) {
+            CommandScheduler.getInstance().schedule(setpointControlCommand);
+            localSetpoint = Math.PI / 2;
+            distalSetpoint = 0;
+        } else if (buttonBox.getRawButton(6)) {
+            CommandScheduler.getInstance().schedule(setpointControlCommand);
+            localSetpoint = 1.45;
+            distalSetpoint = -1.5;
+        } else if (buttonBox.getRawButton(7)) {
+            CommandScheduler.getInstance().schedule(setpointControlCommand);
+            localSetpoint = 0.9;
+            distalSetpoint = -0.15;
+        } else if (buttonBox.getRawButton(8)) {
+            CommandScheduler.getInstance().schedule(setpointControlCommand);
+            localSetpoint = Math.PI / 2;
+            distalSetpoint = -Math.PI / 2;
+        } else if (buttonBox.getRawButton(9)) {
+            scheduler.schedule(jacobianControlCommand);
+        }
+
         scheduler.run();
 
         HighLevelLogger.getInstance().updateLogs();

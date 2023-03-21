@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import java.util.ArrayList;
 import java.util.List;
+import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.lib.telemetry.Logger;
 
 public class Pneumatics implements Subsystem {
@@ -42,10 +43,20 @@ public class Pneumatics implements Subsystem {
     private final Logger<Integer[]> allocatedSolenoidsLogger =
             new Logger<>("allocatedSolenoids", subdirString);
 
+    private final Logger<Double> storagePressureLogger =
+            new Logger<>("storagePressurePSI", subdirString);
+
+    private final Logger<Boolean> pressureWarningLogger =
+            new Logger<>("pressureWarning", subdirString);
+
     private Pneumatics() {
         register();
 
-        pnHub.enableCompressorDigital();
+        pnHub.enableCompressorAnalog(
+                Constants.SUBSYSTEM.PNEUMATICS.MIN_COMPRESSOR_PRESSURE_PSI,
+                Constants.SUBSYSTEM.PNEUMATICS.MAX_PRESSURE_PSI);
+
+        pnHub.clearStickyFaults();
     }
 
     public static Pneumatics getInstance() {
@@ -63,11 +74,20 @@ public class Pneumatics implements Subsystem {
         return pnHub.makeDoubleSolenoid(forwardChannel, reverseChannel);
     }
 
+    public double getPressurePSI() {
+        return pnHub.getPressure(Constants.SUBSYSTEM.PNEUMATICS.ANALOG_PRESSURE_SENSOR_CHANNEL);
+    }
+
     @Override
     public void periodic() {
         compressorActiveLogger.update(pnHub.getCompressor());
         compressorCurrentLogger.update(pnHub.getCompressorCurrent());
         solenoidCurrentLogger.update(pnHub.getSolenoidsTotalCurrent());
         allocatedSolenoidsLogger.update(allocatedSolenoids.toArray(new Integer[] {}));
+
+        storagePressureLogger.update(getPressurePSI());
+
+        pressureWarningLogger.update(
+                getPressurePSI() <= Constants.SUBSYSTEM.PNEUMATICS.PRESSURE_WARNING_THRESHOLD);
     }
 }

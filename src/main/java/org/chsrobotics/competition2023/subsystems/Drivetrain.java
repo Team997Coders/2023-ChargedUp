@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.Robot;
 import org.chsrobotics.competition2023.Simulation;
+import org.chsrobotics.lib.math.UtilityMath;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.telemetry.Logger;
@@ -106,6 +107,11 @@ public class Drivetrain implements Subsystem {
     private final Logger<Double> backLeftCurrentLogger =
             new Logger<>("backLeftCurrent_amps", subdirString);
 
+    private final Logger<Boolean> thermalWarningLogger =
+            new Logger<>("thermalWarning", subdirString);
+    private final Logger<Boolean> currentWarningLogger =
+            new Logger<>("currentWarning", subdirString);
+
     private boolean shiftersInSlow = true;
 
     private double setLeftVoltage = 0;
@@ -116,10 +122,16 @@ public class Drivetrain implements Subsystem {
 
     private Drivetrain() {
         register();
+
         frontLeftSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.FRONT_LEFT_IS_INVERTED);
         frontRightSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.FRONT_RIGHT_IS_INVERTED);
         backLeftSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.BACK_LEFT_IS_INVERTED);
         backRightSparkMax.setInverted(Constants.SUBSYSTEM.DRIVETRAIN.BACK_RIGHT_IS_INVERTED);
+
+        frontLeftSparkMax.clearFaults();
+        backLeftSparkMax.clearFaults();
+        frontRightSparkMax.clearFaults();
+        backRightSparkMax.clearFaults();
 
         setShifters(shiftersInSlow);
     }
@@ -176,6 +188,38 @@ public class Drivetrain implements Subsystem {
         if (Robot.isReal()) {
             return Constants.SUBSYSTEM.DRIVETRAIN.ENCODER_TO_OUTPUT.outputFromInput(
                             rightEncoder.get())
+                    * 2
+                    * Math.PI
+                    * Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS;
+        } else {
+            return simRightPositionMeters;
+        }
+    }
+
+    public double getLeftNEOPosition() {
+        if (Robot.isReal()) {
+            return Constants.SUBSYSTEM.DRIVETRAIN.SLOW_GEAR_RATIO.outputFromInput(
+                            UtilityMath.arithmeticMean(
+                                    new double[] {
+                                        frontLeftSparkMax.getEncoder().getPosition(),
+                                        backLeftSparkMax.getEncoder().getPosition()
+                                    }))
+                    * 2
+                    * Math.PI
+                    * Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS;
+        } else {
+            return simLeftPositionMeters;
+        }
+    }
+
+    public double getRightNEOPosition() {
+        if (Robot.isReal()) {
+            return Constants.SUBSYSTEM.DRIVETRAIN.SLOW_GEAR_RATIO.outputFromInput(
+                            UtilityMath.arithmeticMean(
+                                    new double[] {
+                                        frontRightSparkMax.getEncoder().getPosition(),
+                                        backRightSparkMax.getEncoder().getPosition()
+                                    }))
                     * 2
                     * Math.PI
                     * Constants.SUBSYSTEM.DRIVETRAIN.WHEEL_RADIUS_METERS;
@@ -248,5 +292,21 @@ public class Drivetrain implements Subsystem {
                 rightAccelerationFilter.calculate(rightVelocityFilter.getCurrentOutput()));
         leftAccelerationLogger.update(
                 leftAccelerationFilter.calculate(leftVelocityFilter.getCurrentOutput()));
+
+        double thresholdI = Constants.GLOBAL.CURRENT_WARNING_THRESHOLD_A;
+
+        currentWarningLogger.update(
+                frontLeftSparkMax.getOutputCurrent() >= thresholdI
+                        || backLeftSparkMax.getOutputCurrent() >= thresholdI
+                        || frontRightSparkMax.getOutputCurrent() >= thresholdI
+                        || backRightSparkMax.getOutputCurrent() >= thresholdI);
+
+        double thresholdC = Constants.GLOBAL.THERMAL_WARNING_THRESHOLD_C;
+
+        thermalWarningLogger.update(
+                frontLeftSparkMax.getMotorTemperature() >= thresholdC
+                        || backLeftSparkMax.getMotorTemperature() >= thresholdC
+                        || frontRightSparkMax.getMotorTemperature() >= thresholdC
+                        || backRightSparkMax.getMotorTemperature() >= thresholdC);
     }
 }
