@@ -123,8 +123,8 @@ public class Robot extends SRobot {
             driveRot.setInverted(true);
             driveLin.setInverted(true);
 
-            driveRot.addDeadband(0.05);
-            driveLin.addDeadband(0.05);
+            driveRot.addDeadband(0.1);
+            driveLin.addDeadband(0.1);
 
             operatorLeftHorizontal.addDeadband(0.1);
             operatorLeftVertical.addDeadband(0.1);
@@ -183,9 +183,8 @@ public class Robot extends SRobot {
             }
 
         } else if (to == RobotState.AUTONOMOUS) {
-            // scheduler.schedule(
-            //        Autos.getAutoCommand(Config.AUTO_MODES.MODE_CHOOSER.getSelected(),
-            // drivetrain));
+            scheduler.schedule(
+                    Autos.getAutoCommand(Config.AUTO_MODES.MODE_CHOOSER.getSelected(), drivetrain));
         }
     }
 

@@ -19,6 +19,7 @@ package org.chsrobotics.competition2023.commands.drivetrain;
 import edu.wpi.first.math.controller.DifferentialDriveAccelerationLimiter;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import java.util.Map;
+import java.util.function.Supplier;
 import org.chsrobotics.competition2023.Config;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
@@ -58,6 +59,8 @@ public class TeleopDrive extends CommandBase {
 
     private final JoystickButton brakeButton;
 
+    private DifferentialDriveMode mode;
+
     public TeleopDrive(
             Drivetrain drivetrain,
             JoystickAxis linearAxis,
@@ -81,34 +84,44 @@ public class TeleopDrive extends CommandBase {
         this.brakeButton = brakeButton;
 
         this.slowAxis = slowAxis;
+
+        updateDriveMode();
+
+        Config.TELEOP_DRIVE_MODES.MODE_CHOOSER.registerListener((prev, next) -> updateDriveMode());
+        Config.TELEOP_DRIVE_MODES.LINEAR_MODIFIER_CHOOSER.registerListener(
+                (prev, next) -> updateDriveMode());
+        Config.TELEOP_DRIVE_MODES.ANGULAR_MODIFIER_CHOOSER.registerListener(
+                (prev, next) -> updateDriveMode());
+        Config.TELEOP_DRIVE_MODES.LINEAR_RAMP_RATE_CHOOSER.registerListener(
+                (prev, next) -> updateDriveMode());
+        Config.TELEOP_DRIVE_MODES.ANGULAR_RAMP_RATE_CHOOSER.registerListener(
+                (prev, next) -> updateDriveMode());
     }
 
-    private final Logger<Boolean> brakeLogger = new Logger<>("isCoastMode", "drivetrain");
-
-    @Override
-    public void execute() {
-        drivetrain.setCoastMode(!brakeButton.getAsBoolean());
-        brakeLogger.update(drivetrain.getIsCoastMode());
-
-        drivetrain.setShifters(!shiftButton.getAsBoolean());
-
-        DifferentialDriveMode mode;
-
+    private void updateDriveMode() {
         double linMod = Config.TELEOP_DRIVE_MODES.LINEAR_MODIFIER_CHOOSER.getSelected().value;
         double angMod = Config.TELEOP_DRIVE_MODES.ANGULAR_MODIFIER_CHOOSER.getSelected().value;
 
         double linLimit = Config.TELEOP_DRIVE_MODES.LINEAR_RAMP_RATE_CHOOSER.getSelected().value;
         double angLimit = Config.TELEOP_DRIVE_MODES.ANGULAR_RAMP_RATE_CHOOSER.getSelected().value;
 
-        double slowModifier =
-                ((1 - slowAxis.getValue()) * (1 - Constants.COMMAND.TELEOP_DRIVE.SLOW_SPEED))
-                        + Constants.COMMAND.TELEOP_DRIVE.SLOW_SPEED;
+        Supplier<Double> slowLinModifier =
+                () ->
+                        ((1 - slowAxis.getValue())
+                                        * (1 - Constants.COMMAND.TELEOP_DRIVE.SLOW_SPEED_LIN))
+                                + Constants.COMMAND.TELEOP_DRIVE.SLOW_SPEED_LIN;
+
+        Supplier<Double> slowRotModifier =
+                () ->
+                        ((1 - slowAxis.getValue())
+                                        * (1 - Constants.COMMAND.TELEOP_DRIVE.SLOW_SPEED_LIN))
+                                + Constants.COMMAND.TELEOP_DRIVE.SLOW_SPEED_ROT;
 
         var arcade =
                 new ArcadeDrive(
-                        linearAxis::getValue,
+                        () -> linearAxis.getValue() * slowLinModifier.get(),
                         () ->
-                                rotationalAxis.getValue()
+                                rotationalAxis.getValue() * slowRotModifier.get()
                                         + 0.1
                                                 * (operatorLeftTrigger.getValue()
                                                         - operatorRightTrigger.getValue()),
@@ -118,9 +131,9 @@ public class TeleopDrive extends CommandBase {
                         angLimit);
         var curvature =
                 new CurvatureDrive(
-                        linearAxis::getValue,
+                        () -> linearAxis.getValue() * slowLinModifier.get(),
                         () ->
-                                rotationalAxis.getValue()
+                                rotationalAxis.getValue() * slowRotModifier.get()
                                         + 0.1
                                                 * (operatorLeftTrigger.getValue()
                                                         - operatorRightTrigger.getValue()),
@@ -131,19 +144,25 @@ public class TeleopDrive extends CommandBase {
                         false);
 
         switch (Config.TELEOP_DRIVE_MODES.MODE_CHOOSER.getSelected()) {
-            case ARCADE:
-                mode = arcade;
-            case CURVATURE:
-                mode = curvature;
-            case ARCADE_CURVATURE_MIX_EVEN:
-                mode = new MixedDrive(Map.of(arcade, 0.5, curvature, 0.5));
-            case ARCADE_CURVATURE_MIX_BIAS_ARCADE:
-                mode = new MixedDrive(Map.of(arcade, 0.75, curvature, 0.25));
-            case ARCADE_CURVATURE_MIX_BIAS_CURVATURE:
-                mode = new MixedDrive(Map.of(arcade, 0.25, curvature, 0.75));
-            default:
-                mode = arcade;
+            case ARCADE -> mode = arcade;
+            case CURVATURE -> mode = curvature;
+            case ARCADE_CURVATURE_MIX_EVEN -> mode =
+                    new MixedDrive(Map.of(arcade, 0.5, curvature, 0.5));
+            case ARCADE_CURVATURE_MIX_BIAS_ARCADE -> mode =
+                    new MixedDrive(Map.of(arcade, 0.75, curvature, 0.25));
+            case ARCADE_CURVATURE_MIX_BIAS_CURVATURE -> mode =
+                    new MixedDrive(Map.of(arcade, 0.25, curvature, 0.75));
         }
+    }
+
+    private final Logger<Boolean> brakeLogger = new Logger<>("isCoastMode", "drivetrain");
+
+    @Override
+    public void execute() {
+        drivetrain.setCoastMode(!brakeButton.getAsBoolean());
+        brakeLogger.update(drivetrain.getIsCoastMode());
+
+        drivetrain.setShifters(!shiftButton.getAsBoolean());
 
         var limiter =
                 drivetrain.getShifterSlow() ? slowAccelerationLimiter : fastAccelerationLimiter;

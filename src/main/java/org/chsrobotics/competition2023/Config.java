@@ -16,8 +16,8 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import org.chsrobotics.lib.telemetry.DashboardChooser;
-import org.chsrobotics.lib.telemetry.HighLevelLogger;
 
 public class Config {
     public static final class AUTO_MODES {
@@ -186,31 +186,22 @@ public class Config {
     }
 
     public static void publishChoosers() {
-        HighLevelLogger.getInstance()
-                .publishSendable("teleopDriveModeChooser", TELEOP_DRIVE_MODES.MODE_CHOOSER);
+        SmartDashboard.putData("teleopDriveModeChooser", TELEOP_DRIVE_MODES.MODE_CHOOSER);
 
-        HighLevelLogger.getInstance().publishSendable("armModeChooser", ARM_MODES.ARM_MODE_CHOOSER);
+        SmartDashboard.putData("armModeChooser", ARM_MODES.ARM_MODE_CHOOSER);
 
-        HighLevelLogger.getInstance()
-                .publishSendable(
-                        "teleopDriveLinearModifierChooser",
-                        TELEOP_DRIVE_MODES.LINEAR_MODIFIER_CHOOSER);
+        SmartDashboard.putData(
+                "teleopDriveLinearModifierChooser", TELEOP_DRIVE_MODES.LINEAR_MODIFIER_CHOOSER);
 
-        HighLevelLogger.getInstance()
-                .publishSendable(
-                        "teleopDriveAngularModifierChooser",
-                        TELEOP_DRIVE_MODES.ANGULAR_MODIFIER_CHOOSER);
+        SmartDashboard.putData(
+                "teleopDriveAngularModifierChooser", TELEOP_DRIVE_MODES.ANGULAR_MODIFIER_CHOOSER);
 
-        HighLevelLogger.getInstance()
-                .publishSendable(
-                        "teleopDriveLinearRampRateChooser",
-                        TELEOP_DRIVE_MODES.LINEAR_RAMP_RATE_CHOOSER);
+        SmartDashboard.putData(
+                "teleopDriveLinearRampRateChooser", TELEOP_DRIVE_MODES.LINEAR_RAMP_RATE_CHOOSER);
 
-        HighLevelLogger.getInstance()
-                .publishSendable(
-                        "teleopDriveAngularRampRateChooser",
-                        TELEOP_DRIVE_MODES.ANGULAR_RAMP_RATE_CHOOSER);
+        SmartDashboard.putData(
+                "teleopDriveAngularRampRateChooser", TELEOP_DRIVE_MODES.ANGULAR_RAMP_RATE_CHOOSER);
 
-        HighLevelLogger.getInstance().publishSendable("autoModeChooser", AUTO_MODES.MODE_CHOOSER);
+        SmartDashboard.putData("autoModeChooser", AUTO_MODES.MODE_CHOOSER);
     }
 }
