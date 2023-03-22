@@ -295,13 +295,13 @@ public final class Constants {
 
             public static final double SLOW_SPEED_LIN = 0.35;
             public static final double SLOW_SPEED_ROT = 0.3;
-            public static final double NUDGE_SPEED = 0.2;
+            public static final double NUDGE_SPEED = 0.25;
         }
 
         public static final class AUTO_BALANCE {
             public static final double KP = 6;
             public static final double KI = 0;
-            public static final double KD = 0;
+            public static final double KD = 0.3;
         }
 
         public static final class GO_OVER_RAMP {

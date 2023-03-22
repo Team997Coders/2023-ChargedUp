@@ -59,8 +59,12 @@ public class JacobianControl extends CommandBase {
     @Override
     public void execute() {
         boolean isInvertedButton = invert.getAsBoolean();
-        if (isInvertedButton != wasInvertedButton) {
+        if (isInvertedButton && !wasInvertedButton) {
             xAxis.setInverted(!xAxis.isInverted());
+            wasInvertedButton = true;
+        }
+        if (!isInvertedButton && wasInvertedButton) {
+            wasInvertedButton = false;
         }
 
         Matrix<N1, N2> inputMat = new Matrix<>(Nat.N1(), Nat.N2());

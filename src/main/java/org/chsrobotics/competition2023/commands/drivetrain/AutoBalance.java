@@ -21,6 +21,7 @@ import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.InertialMeasurement;
 import org.chsrobotics.lib.controllers.feedback.PID;
+import org.chsrobotics.lib.telemetry.Logger;
 
 public class AutoBalance extends CommandBase {
     private final Drivetrain drivetrain;
@@ -36,15 +37,19 @@ public class AutoBalance extends CommandBase {
         addRequirements(drivetrain);
     }
 
+    Logger<Boolean> setpointLogger = new Logger<>("autobalanceIsAtSetpoint", "auto");
+
     @Override
     public void execute() {
         double u = -pid.calculate(InertialMeasurement.getInstance().getPitchRadians());
 
-        drivetrain.setLeftVoltages(u);
-        drivetrain.setRightVoltages(u);
-
         if (pid.atSetpoint()) {
+            setpointLogger.update(true);
             drivetrain.setCoastMode(false);
+        } else {
+            setpointLogger.update(false);
+            drivetrain.setLeftVoltages(u);
+            drivetrain.setRightVoltages(u);
         }
     }
 }
