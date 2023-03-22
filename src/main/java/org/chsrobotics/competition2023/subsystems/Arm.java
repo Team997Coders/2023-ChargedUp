@@ -213,13 +213,13 @@ public class Arm implements Subsystem {
                             getLocalAngleRadians(), previousLocalPosition);
         }
 
-        if (getReverseLimitSwitch()
-                || getDistalAngleRadians() >= Constants.SUBSYSTEM.ARM.DISTAL_MAX_ANGLE
-                || getDistalAngleRadians() <= Constants.SUBSYSTEM.ARM.DISTAL_MIN_ANGLE
-                || getLocalAngleRadians() >= Constants.SUBSYSTEM.ARM.LOCAL_MAX_ANGLE
-                || getLocalAngleRadians() <= Constants.SUBSYSTEM.ARM.LOCAL_MIN_ANGLE) {
-            setVoltages(0, 0);
-        }
+        //        if (getReverseLimitSwitch()
+        //                || getDistalAngleRadians() >= Constants.SUBSYSTEM.ARM.DISTAL_MAX_ANGLE
+        //                || getDistalAngleRadians() <= Constants.SUBSYSTEM.ARM.DISTAL_MIN_ANGLE
+        //                || getLocalAngleRadians() >= Constants.SUBSYSTEM.ARM.LOCAL_MAX_ANGLE
+        //                || getLocalAngleRadians() <= Constants.SUBSYSTEM.ARM.LOCAL_MIN_ANGLE) {
+        //            setVoltages(0, 0);
+        //        }
 
         distalVelocity = distalDeltaPosition / 0.02;
         localVelocity = localDeltaPostion / 0.02;

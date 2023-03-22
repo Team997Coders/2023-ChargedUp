@@ -21,7 +21,7 @@ import org.chsrobotics.lib.telemetry.HighLevelLogger;
 
 public class Config {
     public static final class AUTO_MODES {
-        public static enum MODES implements DashboardChooser.Option {
+        public enum MODES implements DashboardChooser.Option {
             NOTHING("Do Nothing"),
             MOBILITY("Mobility"),
             LOW_CUBE("Low Cube"),
@@ -47,8 +47,29 @@ public class Config {
                 DashboardChooser.fromEnum(MODES.class, MODES.NOTHING);
     }
 
+    public static final class ARM_MODES {
+        public enum ARM_MODE implements DashboardChooser.Option {
+            JACOBIAN("Jacobian"),
+            SIMPLE("Simple");
+
+            private final String displayName;
+
+            @Override
+            public String getDisplayName() {
+                return displayName;
+            }
+
+            ARM_MODE(String displayName) {
+                this.displayName = displayName;
+            }
+        }
+
+        public static final DashboardChooser<ARM_MODE> ARM_MODE_CHOOSER =
+                DashboardChooser.fromEnum(ARM_MODE.class, ARM_MODE.JACOBIAN);
+    }
+
     public static final class TELEOP_DRIVE_MODES {
-        public static enum LINEAR_MODIFIER implements DashboardChooser.Option {
+        public enum LINEAR_MODIFIER implements DashboardChooser.Option {
             FULL(1, "Full"),
             PARTIAL(0.75, "Partial"),
             HALF(0.5, "Half"),
@@ -118,7 +139,7 @@ public class Config {
         public static final DashboardChooser<ANGULAR_MODIFIER> ANGULAR_MODIFIER_CHOOSER =
                 DashboardChooser.fromEnum(ANGULAR_MODIFIER.class, ANGULAR_MODIFIER.FULL);
 
-        public static enum ANGULAR_RAMP_RATE implements DashboardChooser.Option {
+        public enum ANGULAR_RAMP_RATE implements DashboardChooser.Option {
             NONE(0, "None"),
             FAST(10, "Fast"),
             MEDIUM(5, "Medium"),
@@ -167,6 +188,8 @@ public class Config {
     public static void publishChoosers() {
         HighLevelLogger.getInstance()
                 .publishSendable("teleopDriveModeChooser", TELEOP_DRIVE_MODES.MODE_CHOOSER);
+
+        HighLevelLogger.getInstance().publishSendable("armModeChooser", ARM_MODES.ARM_MODE_CHOOSER);
 
         HighLevelLogger.getInstance()
                 .publishSendable(

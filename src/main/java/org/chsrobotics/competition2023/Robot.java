@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import org.chsrobotics.competition2023.commands.ClawCommand;
 import org.chsrobotics.competition2023.commands.arm.ArmSetpointControl;
 import org.chsrobotics.competition2023.commands.arm.JacobianControl;
+import org.chsrobotics.competition2023.commands.arm.SimpleArmTest;
 import org.chsrobotics.competition2023.commands.arm.UpdateArmVis;
 import org.chsrobotics.competition2023.commands.drivetrain.TeleopDrive;
 import org.chsrobotics.competition2023.subsystems.Arm;
@@ -68,8 +69,13 @@ public class Robot extends SRobot {
             new VirtualJoystickButton(driverController.rightTriggerAxis(), 0.1, 1, false);
     private final JoystickAxis slowAxis = driverController.leftTriggerAxis();
 
-    private final JoystickAxis jacobianX = operatorController.leftStickHorizontalAxis();
-    private final JoystickAxis jacobianY = operatorController.leftStickVerticalAxis();
+    private final JoystickButton brakeButton = driverController.rightBumperButton();
+
+    private final JoystickAxis operatorLeftHorizontal =
+            operatorController.leftStickHorizontalAxis();
+    private final JoystickAxis operatorLeftVertical = operatorController.leftStickVerticalAxis();
+    private final JoystickAxis operatorRightVertical = operatorController.rightStickVerticalAxis();
+    private final JoystickButton jacobianInvert = operatorController.leftBumperButton();
     private final JoystickButton jacobianSlowMode = operatorController.rightBumperButton();
 
     private final JoystickButton clawButton = operatorController.XButton();
@@ -80,7 +86,17 @@ public class Robot extends SRobot {
 
     private final Command jacobianControlCommand =
             new ParallelCommandGroup(
-                    new JacobianControl(arm, jacobianX, jacobianY, () -> jacobianScaling),
+                    new JacobianControl(
+                            arm,
+                            operatorLeftHorizontal,
+                            operatorLeftVertical,
+                            jacobianInvert,
+                            () -> jacobianScaling),
+                    new UpdateArmVis(arm, () -> 0, () -> 0));
+
+    private final Command simpleControlCommand =
+            new ParallelCommandGroup(
+                    new SimpleArmTest(arm, operatorLeftVertical, operatorRightVertical, 3),
                     new UpdateArmVis(arm, () -> 0, () -> 0));
 
     private final Command setpointControlCommand =
@@ -108,11 +124,11 @@ public class Robot extends SRobot {
             driveRot.addDeadband(0.05);
             driveLin.addDeadband(0.05);
 
-            jacobianX.addDeadband(0.1);
-            jacobianY.addDeadband(0.1);
+            operatorLeftHorizontal.addDeadband(0.1);
+            operatorLeftVertical.addDeadband(0.1);
 
-            jacobianY.setInverted(true);
-            jacobianX.setInverted(true);
+            operatorLeftVertical.setInverted(true);
+            operatorLeftHorizontal.setInverted(true);
 
             uptimer.reset();
             uptimer.start();
@@ -146,9 +162,15 @@ public class Robot extends SRobot {
 
             scheduler.schedule(new ClawCommand(claw, clawButton));
 
-            scheduler.schedule(new TeleopDrive(drivetrain, driveLin, driveRot, shift, slowAxis));
+            scheduler.schedule(
+                    new TeleopDrive(drivetrain, driveLin, driveRot, shift, brakeButton, slowAxis));
 
-            scheduler.schedule(jacobianControlCommand);
+            if (Config.ARM_MODES.ARM_MODE_CHOOSER.getSelected()
+                    == Config.ARM_MODES.ARM_MODE.JACOBIAN) {
+                scheduler.schedule(jacobianControlCommand);
+            } else {
+                scheduler.schedule(simpleControlCommand);
+            }
 
         } else if (to == RobotState.AUTONOMOUS) {
             // scheduler.schedule(

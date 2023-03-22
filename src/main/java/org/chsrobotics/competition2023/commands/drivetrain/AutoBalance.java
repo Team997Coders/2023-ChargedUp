@@ -44,7 +44,7 @@ public class AutoBalance extends CommandBase {
         drivetrain.setRightVoltages(u);
 
         if (pid.atSetpoint()) {
-            drivetrain.setBrakeMode(false);
+            drivetrain.setCoastMode(false);
         }
     }
 }

@@ -183,9 +183,9 @@ public final class Constants {
 
             public static final int LOCAL_POTENTIOMETER_ANALOG_CHANNEL = 0;
 
-            public static final double DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 3.70;
+            public static final double DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 3.67;
 
-            public static final double LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 6.07;
+            public static final double LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 4.03;
 
             public static final double POTENTIOMETER_RANGE_RADIANS = 6 * Math.PI;
 

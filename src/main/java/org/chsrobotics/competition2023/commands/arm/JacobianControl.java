@@ -26,29 +26,43 @@ import java.util.function.DoubleSupplier;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.lib.input.JoystickAxis;
+import org.chsrobotics.lib.input.JoystickButton;
 
 public class JacobianControl extends CommandBase {
     private final JoystickAxis xAxis;
     private final JoystickAxis yAxis;
+    private final JoystickButton invert;
 
     private final Arm arm;
 
     private final DoubleSupplier scalingLambda;
 
     public JacobianControl(
-            Arm arm, JoystickAxis xAxis, JoystickAxis yAxis, DoubleSupplier scalingLambda) {
+            Arm arm,
+            JoystickAxis xAxis,
+            JoystickAxis yAxis,
+            JoystickButton invert,
+            DoubleSupplier scalingLambda) {
         addRequirements(arm);
 
         this.xAxis = xAxis;
         this.yAxis = yAxis;
+        this.invert = invert;
 
         this.arm = arm;
 
         this.scalingLambda = scalingLambda;
     }
 
+    boolean wasInvertedButton = false;
+
     @Override
     public void execute() {
+        boolean isInvertedButton = invert.getAsBoolean();
+        if (isInvertedButton != wasInvertedButton) {
+            xAxis.setInverted(!xAxis.isInverted());
+        }
+
         Matrix<N1, N2> inputMat = new Matrix<>(Nat.N1(), Nat.N2());
 
         inputMat.set(0, 0, xAxis.getValue() * scalingLambda.getAsDouble());
@@ -76,6 +90,24 @@ public class JacobianControl extends CommandBase {
                 (lenLocal * Math.cos(angLocal)) + (lenDistal * Math.cos(angLocal + angDistal)));
 
         jacobian.set(1, 1, lenDistal * Math.cos(angLocal + angDistal));
+
+        /*
+
+        double thresh = 0.1
+
+        Matrix<N2, N2> R = new Matrix<>(Nat.N2(), Nat.N2());
+        R.set(0,0, Math.cos(angLocal));
+        R.set(0,1
+
+
+
+        // if close to the fully extended singularity on the jacobian.
+        if (angDistal < thresh && angDistal > -thresh) {
+            //
+        }
+
+
+        */
 
         Matrix<N1, N2> outputMat = inputMat.times(jacobian.inv());
 

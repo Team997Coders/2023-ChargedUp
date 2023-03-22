@@ -28,6 +28,7 @@ import org.chsrobotics.lib.drive.differential.DifferentialDriveMode;
 import org.chsrobotics.lib.drive.differential.MixedDrive;
 import org.chsrobotics.lib.input.JoystickAxis;
 import org.chsrobotics.lib.input.JoystickButton;
+import org.chsrobotics.lib.telemetry.Logger;
 
 public class TeleopDrive extends CommandBase {
     private final Drivetrain drivetrain;
@@ -53,11 +54,14 @@ public class TeleopDrive extends CommandBase {
 
     private final JoystickAxis slowAxis;
 
+    private final JoystickButton brakeButton;
+
     public TeleopDrive(
             Drivetrain drivetrain,
             JoystickAxis axisA,
             JoystickAxis axisB,
             JoystickButton shiftButton,
+            JoystickButton brakeButton,
             JoystickAxis slowAxis) {
         addRequirements(drivetrain);
         this.drivetrain = drivetrain;
@@ -67,11 +71,18 @@ public class TeleopDrive extends CommandBase {
 
         this.shiftButton = shiftButton;
 
+        this.brakeButton = brakeButton;
+
         this.slowAxis = slowAxis;
     }
 
+    private final Logger<Boolean> brakeLogger = new Logger<>("isCoastMode", "drivetrain");
+
     @Override
     public void execute() {
+        drivetrain.setCoastMode(!brakeButton.getAsBoolean());
+        brakeLogger.update(drivetrain.getIsCoastMode());
+
         drivetrain.setShifters(!shiftButton.getAsBoolean());
 
         DifferentialDriveMode mode;

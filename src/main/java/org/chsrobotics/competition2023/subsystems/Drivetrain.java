@@ -156,7 +156,7 @@ public class Drivetrain implements Subsystem {
         setLeftVoltage = voltage;
     }
 
-    public void setBrakeMode(boolean isCoastMode) {
+    public void setCoastMode(boolean isCoastMode) {
         frontRightSparkMax.setIdleMode(isCoastMode ? IdleMode.kCoast : IdleMode.kBrake);
         backRightSparkMax.setIdleMode(isCoastMode ? IdleMode.kCoast : IdleMode.kBrake);
         frontLeftSparkMax.setIdleMode(isCoastMode ? IdleMode.kCoast : IdleMode.kBrake);
