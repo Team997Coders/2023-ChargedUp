@@ -293,7 +293,8 @@ public final class Constants {
 
             public static final double SLOW_MAX_ANGULAR_ACCEL_RAD_P_SEC_SQUARED = 3;
 
-            public static final double MIN_SPEED = 0.3;
+            public static final double SLOW_SPEED = 0.3;
+            public static final double NUDGE_SPEED = 0.1;
         }
 
         public static final class AUTO_BALANCE {

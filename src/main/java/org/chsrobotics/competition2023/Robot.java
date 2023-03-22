@@ -75,6 +75,8 @@ public class Robot extends SRobot {
             operatorController.leftStickHorizontalAxis();
     private final JoystickAxis operatorLeftVertical = operatorController.leftStickVerticalAxis();
     private final JoystickAxis operatorRightVertical = operatorController.rightStickVerticalAxis();
+    private final JoystickAxis operatorLeftTrigger = operatorController.leftTriggerAxis();
+    private final JoystickAxis operatorRightTrigger = operatorController.rightTriggerAxis();
     private final JoystickButton jacobianInvert = operatorController.leftBumperButton();
     private final JoystickButton jacobianSlowMode = operatorController.rightBumperButton();
 
@@ -163,7 +165,15 @@ public class Robot extends SRobot {
             scheduler.schedule(new ClawCommand(claw, clawButton));
 
             scheduler.schedule(
-                    new TeleopDrive(drivetrain, driveLin, driveRot, shift, brakeButton, slowAxis));
+                    new TeleopDrive(
+                            drivetrain,
+                            driveLin,
+                            driveRot,
+                            operatorLeftTrigger,
+                            operatorRightTrigger,
+                            shift,
+                            brakeButton,
+                            slowAxis));
 
             if (Config.ARM_MODES.ARM_MODE_CHOOSER.getSelected()
                     == Config.ARM_MODES.ARM_MODE.JACOBIAN) {

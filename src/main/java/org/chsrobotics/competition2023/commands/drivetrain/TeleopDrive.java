@@ -47,8 +47,10 @@ public class TeleopDrive extends CommandBase {
                     Constants.COMMAND.TELEOP_DRIVE.SLOW_MAX_LINEAR_ACCEL_M_P_SEC_SQUARED,
                     Constants.COMMAND.TELEOP_DRIVE.SLOW_MAX_ANGULAR_ACCEL_RAD_P_SEC_SQUARED);
 
-    private final JoystickAxis axisA;
-    private final JoystickAxis axisB;
+    private final JoystickAxis linearAxis;
+    private final JoystickAxis rotationalAxis;
+    private final JoystickAxis operatorLeftTrigger;
+    private final JoystickAxis operatorRightTrigger;
 
     private final JoystickButton shiftButton;
 
@@ -58,16 +60,21 @@ public class TeleopDrive extends CommandBase {
 
     public TeleopDrive(
             Drivetrain drivetrain,
-            JoystickAxis axisA,
-            JoystickAxis axisB,
+            JoystickAxis linearAxis,
+            JoystickAxis rotationalAxis,
+            JoystickAxis operatorLeftTrigger,
+            JoystickAxis operatorRightTrigger,
             JoystickButton shiftButton,
             JoystickButton brakeButton,
             JoystickAxis slowAxis) {
         addRequirements(drivetrain);
         this.drivetrain = drivetrain;
 
-        this.axisA = axisA;
-        this.axisB = axisB;
+        this.linearAxis = linearAxis;
+        this.rotationalAxis = rotationalAxis;
+
+        this.operatorLeftTrigger = operatorLeftTrigger;
+        this.operatorRightTrigger = operatorRightTrigger;
 
         this.shiftButton = shiftButton;
 
@@ -93,8 +100,35 @@ public class TeleopDrive extends CommandBase {
         double linLimit = Config.TELEOP_DRIVE_MODES.LINEAR_RAMP_RATE_CHOOSER.getSelected().value;
         double angLimit = Config.TELEOP_DRIVE_MODES.ANGULAR_RAMP_RATE_CHOOSER.getSelected().value;
 
-        var arcade = new ArcadeDrive(axisA, axisB, linMod, angMod, linLimit, angLimit);
-        var curvature = new CurvatureDrive(axisA, axisB, linMod, angMod, linLimit, angLimit, false);
+        double slowModifier =
+                ((1 - slowAxis.getValue()) * (1 - Constants.COMMAND.TELEOP_DRIVE.SLOW_SPEED))
+                        + Constants.COMMAND.TELEOP_DRIVE.SLOW_SPEED;
+
+        var arcade =
+                new ArcadeDrive(
+                        linearAxis::getValue,
+                        () ->
+                                rotationalAxis.getValue()
+                                        + 0.1
+                                                * (operatorLeftTrigger.getValue()
+                                                        - operatorRightTrigger.getValue()),
+                        () -> linMod,
+                        () -> angMod,
+                        linLimit,
+                        angLimit);
+        var curvature =
+                new CurvatureDrive(
+                        linearAxis::getValue,
+                        () ->
+                                rotationalAxis.getValue()
+                                        + 0.1
+                                                * (operatorLeftTrigger.getValue()
+                                                        - operatorRightTrigger.getValue()),
+                        () -> linMod,
+                        () -> angMod,
+                        linLimit,
+                        angLimit,
+                        false);
 
         switch (Config.TELEOP_DRIVE_MODES.MODE_CHOOSER.getSelected()) {
             case ARCADE:
@@ -127,11 +161,7 @@ public class TeleopDrive extends CommandBase {
         // drivetrain.setRightVoltages(voltages.right);
         // drivetrain.setLeftVoltages(voltages.left);
 
-        double slowModifier =
-                ((1 - slowAxis.getValue()) * (1 - Constants.COMMAND.TELEOP_DRIVE.MIN_SPEED))
-                        + Constants.COMMAND.TELEOP_DRIVE.MIN_SPEED;
-
-        drivetrain.setRightVoltages(mode.execute().right * 12 * slowModifier);
-        drivetrain.setLeftVoltages(mode.execute().left * 12 * slowModifier);
+        drivetrain.setRightVoltages(mode.execute().right * 12);
+        drivetrain.setLeftVoltages(mode.execute().left * 12);
     }
 }

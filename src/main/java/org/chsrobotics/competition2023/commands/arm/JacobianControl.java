@@ -91,32 +91,51 @@ public class JacobianControl extends CommandBase {
 
         jacobian.set(1, 1, lenDistal * Math.cos(angLocal + angDistal));
 
-        /*
-
-        double thresh = 0.1
+        double thresh = 0.2; // probably too large at the moment.
 
         Matrix<N2, N2> R = new Matrix<>(Nat.N2(), Nat.N2());
-        R.set(0,0, Math.cos(angLocal));
-        R.set(0,1
+        R.set(0, 0, Math.cos(angLocal));
+        R.set(0, 1, -Math.sin(angLocal));
+        R.set(1, 0, Math.sin(angLocal));
+        R.set(1, 1, Math.cos(angLocal));
 
+        Matrix<N2, N1> endEffect = R.times(inputMat.transpose());
+        double xEnd = endEffect.get(0, 0);
+        double yEnd = endEffect.get(1, 0);
+        double thetaDot1;
+        double thetaDot2;
 
+        if (yEnd > 0) {
+            yEnd = 0;
+        }
 
         // if close to the fully extended singularity on the jacobian.
         if (angDistal < thresh && angDistal > -thresh) {
             //
+            double scaler = 1.0 / (lenLocal + lenDistal);
+            thetaDot1 = -xEnd * scaler - yEnd * scaler;
+            thetaDot2 = yEnd * scaler;
+        } else if (angDistal < (thresh + Math.PI) && angDistal > (Math.PI - thresh)) {
+            double scaler = 1.0 / (lenLocal - lenDistal);
+            thetaDot1 = -xEnd * scaler - yEnd * scaler;
+            thetaDot2 = yEnd * scaler;
+        } else {
+            Matrix<N1, N2> outputMat = inputMat.times(jacobian.inv());
+
+            thetaDot1 = outputMat.get(0, 0);
+            thetaDot2 = outputMat.get(0, 1);
         }
 
-
-        */
-
-        Matrix<N1, N2> outputMat = inputMat.times(jacobian.inv());
+        // Matrix<N1, N2> outputMat = inputMat.times(jacobian.inv());
 
         var feedforwardU =
                 Constants.SUBSYSTEM.ARM.ARM_MODEL.feedforward(
                         VecBuilder.fill(arm.getLocalAngleRadians(), arm.getDistalAngleRadians()));
 
-        double localU = outputMat.get(0, 0) + feedforwardU.get(0, 0);
-        double distalU = outputMat.get(0, 1) + feedforwardU.get(1, 0);
+        // double localU = outputMat.get(0, 0) + feedforwardU.get(0, 0);
+        // double distalU = outputMat.get(0, 1) + feedforwardU.get(1, 0);
+        double localU = thetaDot1 + feedforwardU.get(0, 0);
+        double distalU = thetaDot2 + feedforwardU.get(1, 0);
 
         arm.setVoltages(localU, distalU);
     }
