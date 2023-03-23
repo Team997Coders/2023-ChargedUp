@@ -98,10 +98,10 @@ public class JacobianControl extends CommandBase {
         double thresh = 0.2; // probably too large at the moment.
 
         Matrix<N2, N2> R = new Matrix<>(Nat.N2(), Nat.N2());
-        R.set(0, 0, Math.cos(angLocal));
-        R.set(0, 1, -Math.sin(angLocal));
-        R.set(1, 0, Math.sin(angLocal));
-        R.set(1, 1, Math.cos(angLocal));
+        R.set(0, 0, Math.cos(-angLocal));
+        R.set(0, 1, -Math.sin(-angLocal));
+        R.set(1, 0, Math.sin(-angLocal));
+        R.set(1, 1, Math.cos(-angLocal));
 
         // Rotate the control inputs to the end effector space
         Matrix<N2, N1> endEffect = R.times(inputMat.transpose());
@@ -118,7 +118,7 @@ public class JacobianControl extends CommandBase {
         if (angDistal < thresh && angDistal > -thresh) {
             //
             double scaler = 1.0 / (lenLocal + lenDistal);
-            double fudgeFactor = 4; // should be one, but should force the arm to bend more. Not sure why it isn't
+            double fudgeFactor = 1; // should be one, but should force the arm to bend more. Not sure why it isn't
 
             // switch elbow bend depending on direction of x in end effector space.
             if (xEnd < 0) {
