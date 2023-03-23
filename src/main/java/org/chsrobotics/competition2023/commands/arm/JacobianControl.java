@@ -103,6 +103,7 @@ public class JacobianControl extends CommandBase {
         R.set(1, 0, Math.sin(angLocal));
         R.set(1, 1, Math.cos(angLocal));
 
+        // Rotate the control inputs to the end effector space
         Matrix<N2, N1> endEffect = R.times(inputMat.transpose());
         double xEnd = endEffect.get(0, 0);
         double yEnd = endEffect.get(1, 0);
@@ -117,12 +118,26 @@ public class JacobianControl extends CommandBase {
         if (angDistal < thresh && angDistal > -thresh) {
             //
             double scaler = 1.0 / (lenLocal + lenDistal);
-            thetaDot1 = -xEnd * scaler - yEnd * scaler;
-            thetaDot2 = yEnd * scaler;
+            double fudgeFactor = 4; // should be one, but should force the arm to bend more. Not sure why it isn't
+
+            // switch elbow bend depending on direction of x in end effector space.
+            if (xEnd < 0) {
+                thetaDot1 = -xEnd * scaler - yEnd * scaler * fudgeFactor;
+                thetaDot2 = yEnd * scaler * fudgeFactor;
+            } else {
+                thetaDot1 = -xEnd * scaler + yEnd * scaler * fudgeFactor;
+                thetaDot2 = -yEnd * scaler * fudgeFactor;
+            }
         } else if (angDistal < (thresh + Math.PI) && angDistal > (Math.PI - thresh)) {
             double scaler = 1.0 / (lenLocal - lenDistal);
-            thetaDot1 = -xEnd * scaler - yEnd * scaler;
-            thetaDot2 = yEnd * scaler;
+
+            if (xEnd > 0) {
+                thetaDot1 = -xEnd * scaler - yEnd * scaler;
+                thetaDot2 = yEnd * scaler;
+            } else {
+                thetaDot1 = -xEnd * scaler + yEnd * scaler;
+                thetaDot2 = -yEnd * scaler;
+            }
         } else {
             Matrix<N1, N2> outputMat = inputMat.times(jacobian.inv());
 

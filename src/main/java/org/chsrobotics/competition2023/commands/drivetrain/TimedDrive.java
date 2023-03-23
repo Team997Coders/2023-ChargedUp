@@ -18,6 +18,7 @@ package org.chsrobotics.competition2023.commands.drivetrain;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 
 public class TimedDrive extends CommandBase {
@@ -45,8 +46,8 @@ public class TimedDrive extends CommandBase {
 
     @Override
     public void execute() {
-        drivetrain.setLeftVoltages(u);
-        drivetrain.setRightVoltages(u);
+        drivetrain.setLeftVoltages(u * Constants.SUBSYSTEM.DRIVETRAIN.LEFT_MOTOR_MULTIPLIER);
+        drivetrain.setRightVoltages(u * Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_MOTOR_MULTIPLIER);
     }
 
     @Override

@@ -24,14 +24,14 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.InertialMeasurement;
-import org.chsrobotics.competition2023.subsystems.Vision;
+//import org.chsrobotics.competition2023.subsystems.Vision;
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
 import org.chsrobotics.lib.telemetry.Logger;
 
 public class Localizer {
     private static final Localizer instance = new Localizer();
 
-    private final Vision vision = Vision.getInstance();
+//    private final Vision vision = Vision.getInstance();
 
     private final Field2d field2d = new Field2d();
 
@@ -67,19 +67,19 @@ public class Localizer {
                 Drivetrain.getInstance().getLeftNEOPosition(),
                 Drivetrain.getInstance().getRightNEOPosition());
 
-        if (vision.getCurrentPoseEstimates() != null) {
-            var estimates = vision.getCurrentPoseEstimates();
-            if (estimates.firstValue() != null) {
-                var measurement = estimates.firstValue();
-                poseEstimator.addVisionMeasurement(
-                        measurement.estimatedPose.toPose2d(), measurement.timestampSeconds);
-            }
-            if (estimates.secondValue() != null) {
-                var measurement = estimates.secondValue();
-                poseEstimator.addVisionMeasurement(
-                        measurement.estimatedPose.toPose2d(), measurement.timestampSeconds);
-            }
-        }
+//        if (vision.getCurrentPoseEstimates() != null) {
+//            var estimates = vision.getCurrentPoseEstimates();
+//            if (estimates.firstValue() != null) {
+//                var measurement = estimates.firstValue();
+//                poseEstimator.addVisionMeasurement(
+//                        measurement.estimatedPose.toPose2d(), measurement.timestampSeconds);
+//            }
+//            if (estimates.secondValue() != null) {
+//                var measurement = estimates.secondValue();
+//                poseEstimator.addVisionMeasurement(
+//                        measurement.estimatedPose.toPose2d(), measurement.timestampSeconds);
+//            }
+//        }
     }
 
     public void setPose(Pose2d newPose) {

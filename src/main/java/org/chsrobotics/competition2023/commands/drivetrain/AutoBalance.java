@@ -48,8 +48,8 @@ public class AutoBalance extends CommandBase {
             drivetrain.setCoastMode(false);
         } else {
             setpointLogger.update(false);
-            drivetrain.setLeftVoltages(u);
-            drivetrain.setRightVoltages(u);
+            drivetrain.setLeftVoltages(u  * Constants.SUBSYSTEM.DRIVETRAIN.LEFT_MOTOR_MULTIPLIER);
+            drivetrain.setRightVoltages(u  * Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_MOTOR_MULTIPLIER);
         }
     }
 }

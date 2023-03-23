@@ -29,10 +29,7 @@ import org.chsrobotics.competition2023.commands.arm.JacobianControl;
 import org.chsrobotics.competition2023.commands.arm.SimpleArmTest;
 import org.chsrobotics.competition2023.commands.arm.UpdateArmVis;
 import org.chsrobotics.competition2023.commands.drivetrain.TeleopDrive;
-import org.chsrobotics.competition2023.subsystems.Arm;
-import org.chsrobotics.competition2023.subsystems.Claw;
-import org.chsrobotics.competition2023.subsystems.Drivetrain;
-import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
+import org.chsrobotics.competition2023.subsystems.*;
 import org.chsrobotics.lib.input.JoystickAxis;
 import org.chsrobotics.lib.input.JoystickButton;
 import org.chsrobotics.lib.input.VirtualJoystickButton;
@@ -78,6 +75,8 @@ public class Robot extends SRobot {
     private final JoystickAxis operatorLeftTrigger = operatorController.leftTriggerAxis();
     private final JoystickAxis operatorRightTrigger = operatorController.rightTriggerAxis();
     private final JoystickButton jacobianInvert = operatorController.leftBumperButton();
+    private final JoystickButton operatorAButton = operatorController.AButton();
+    private final JoystickButton operatorBButton = operatorController.BButton();
     private final JoystickButton jacobianSlowMode = operatorController.rightBumperButton();
 
     private final JoystickButton clawButton = operatorController.XButton();
@@ -106,8 +105,21 @@ public class Robot extends SRobot {
                     new ArmSetpointControl(arm, () -> localSetpoint, () -> distalSetpoint),
                     new UpdateArmVis(arm, () -> localSetpoint, () -> distalSetpoint));
 
+    private void setAllianceLeds() {
+        DriverStation.Alliance alliance = DriverStation.getAlliance();
+        if (alliance == DriverStation.Alliance.Red) {
+            LedMatrix.getInstance().setState(LedMatrix.State.RED);
+        } else {
+            LedMatrix.getInstance().setState(LedMatrix.State.BLUE);
+        }
+    }
+
     @Override
     public void stateTransition(RobotState from, RobotState to) {
+        if (to != RobotState.DISABLED) {
+            LedMatrix.getInstance().setState(LedMatrix.State.OFF);
+        }
+
         if (from == RobotState.NONE && to == RobotState.DISABLED) {
             // robot initialization
             HighLevelLogger.getInstance().startLogging();
@@ -171,6 +183,8 @@ public class Robot extends SRobot {
                             driveRot,
                             operatorLeftTrigger,
                             operatorRightTrigger,
+                            operatorAButton,
+                            operatorBButton,
                             shift,
                             brakeButton,
                             slowAxis));
@@ -190,6 +204,10 @@ public class Robot extends SRobot {
 
     @Override
     public void periodic(RobotState state) {
+        if (state == RobotState.DISABLED) {
+            setAllianceLeds();
+        }
+
         if (jacobianSlowMode.getAsBoolean()) {
             jacobianScaling = Constants.COMMAND.ARM_JACOBIAN_CONTROL.INPUT_SCALING_SLOW;
         } else {

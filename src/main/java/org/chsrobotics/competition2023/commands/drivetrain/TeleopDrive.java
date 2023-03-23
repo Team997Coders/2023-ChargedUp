@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 import org.chsrobotics.competition2023.Config;
 import org.chsrobotics.competition2023.Constants;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
+import org.chsrobotics.competition2023.subsystems.LedMatrix;
 import org.chsrobotics.lib.drive.differential.ArcadeDrive;
 import org.chsrobotics.lib.drive.differential.CurvatureDrive;
 import org.chsrobotics.lib.drive.differential.DifferentialDriveMode;
@@ -52,6 +53,8 @@ public class TeleopDrive extends CommandBase {
     private final JoystickAxis rotationalAxis;
     private final JoystickAxis operatorLeftTrigger;
     private final JoystickAxis operatorRightTrigger;
+    private final JoystickButton operatorAButton;
+    private final JoystickButton operatorBButton;
 
     private final JoystickButton shiftButton;
 
@@ -67,6 +70,8 @@ public class TeleopDrive extends CommandBase {
             JoystickAxis rotationalAxis,
             JoystickAxis operatorLeftTrigger,
             JoystickAxis operatorRightTrigger,
+            JoystickButton operatorAButton,
+            JoystickButton operatorBButton,
             JoystickButton shiftButton,
             JoystickButton brakeButton,
             JoystickAxis slowAxis) {
@@ -78,6 +83,9 @@ public class TeleopDrive extends CommandBase {
 
         this.operatorLeftTrigger = operatorLeftTrigger;
         this.operatorRightTrigger = operatorRightTrigger;
+
+        this.operatorAButton = operatorAButton;
+        this.operatorBButton = operatorBButton;
 
         this.shiftButton = shiftButton;
 
@@ -162,6 +170,14 @@ public class TeleopDrive extends CommandBase {
         drivetrain.setCoastMode(!brakeButton.getAsBoolean());
         brakeLogger.update(drivetrain.getIsCoastMode());
 
+        if (operatorAButton.getAsBoolean()) {
+            LedMatrix.getInstance().setState(LedMatrix.State.CONE);
+        } else if (operatorBButton.getAsBoolean()) {
+            LedMatrix.getInstance().setState(LedMatrix.State.CUBE);
+        } else {
+            LedMatrix.getInstance().setState(LedMatrix.State.OFF);
+        }
+
         drivetrain.setShifters(!shiftButton.getAsBoolean());
 
         var limiter =
@@ -180,7 +196,7 @@ public class TeleopDrive extends CommandBase {
         // drivetrain.setRightVoltages(voltages.right);
         // drivetrain.setLeftVoltages(voltages.left);
 
-        drivetrain.setRightVoltages(mode.execute().right * 12);
-        drivetrain.setLeftVoltages(mode.execute().left * 12);
+        drivetrain.setLeftVoltages(mode.execute().left * 12 * Constants.SUBSYSTEM.DRIVETRAIN.LEFT_MOTOR_MULTIPLIER);
+        drivetrain.setRightVoltages(mode.execute().right * 12 * Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_MOTOR_MULTIPLIER);
     }
 }

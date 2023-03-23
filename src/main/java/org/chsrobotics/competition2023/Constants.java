@@ -39,6 +39,8 @@ public final class Constants {
 
     public static final class SUBSYSTEM {
         public static final class DRIVETRAIN {
+            public static final double LEFT_MOTOR_MULTIPLIER = 0.9;
+            public static final double RIGHT_MOTOR_MULTIPLIER = 1.0;
             public static final int LEFT_ENCODER_CHANNEL_A = 2;
             public static final int LEFT_ENCODER_CHANNEL_B = 3;
             public static final int RIGHT_ENCODER_CHANNEL_A = 0;
@@ -295,7 +297,7 @@ public final class Constants {
 
             public static final double SLOW_SPEED_LIN = 0.35;
             public static final double SLOW_SPEED_ROT = 0.3;
-            public static final double NUDGE_SPEED = 0.25;
+            public static final double NUDGE_SPEED = 0.2;
         }
 
         public static final class AUTO_BALANCE {
