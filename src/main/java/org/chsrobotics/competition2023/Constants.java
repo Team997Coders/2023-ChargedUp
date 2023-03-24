@@ -185,9 +185,11 @@ public final class Constants {
 
             public static final int LOCAL_POTENTIOMETER_ANALOG_CHANNEL = 0;
 
-            public static final double DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 3.67;
+            // If too high, raise
+            public static final double DISTAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 3.83;
 
-            public static final double LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 4.03;
+            // If too high, lower
+            public static final double LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 3.92;
 
             public static final double POTENTIOMETER_RANGE_RADIANS = 6 * Math.PI;
 
@@ -304,6 +306,8 @@ public final class Constants {
             public static final double KP = 6;
             public static final double KI = 0;
             public static final double KD = 0.3;
+            public static final double BALANCED_ANGLE_THRESHOLD = 0.075;
+            public static final double BALANCED_TIME_THRESHOLD = 1500;
         }
 
         public static final class GO_OVER_RAMP {

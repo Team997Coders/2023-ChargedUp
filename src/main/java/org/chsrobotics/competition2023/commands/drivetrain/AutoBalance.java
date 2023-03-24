@@ -39,12 +39,41 @@ public class AutoBalance extends CommandBase {
 
     Logger<Boolean> setpointLogger = new Logger<>("autobalanceIsAtSetpoint", "auto");
 
+    Long startEngaged;
+
+    Logger<Double> pitchLogger = new Logger<>("pitch", "drivetrain");
+    Logger<Boolean> angleThresholdLogger = new Logger<>("atAngle", "auto");
+    Logger<Boolean> timeThresholdLogger = new Logger<>("atTime", "auto");
+
     @Override
     public void execute() {
-        double u = -pid.calculate(InertialMeasurement.getInstance().getPitchRadians());
+        double pitch = InertialMeasurement.getInstance().getPitchRadians();
+        pitchLogger.update(pitch);
+
+        if (Math.abs(pitch) < Constants.COMMAND.AUTO_BALANCE.BALANCED_ANGLE_THRESHOLD) {
+            angleThresholdLogger.update(true);
+            if (startEngaged == null) {
+                startEngaged = System.currentTimeMillis();
+            }
+            if (System.currentTimeMillis()-startEngaged > Constants.COMMAND.AUTO_BALANCE.BALANCED_TIME_THRESHOLD) {
+                timeThresholdLogger.update(true);
+                drivetrain.setLeftVoltages(0);
+                drivetrain.setRightVoltages(0);
+                drivetrain.setCoastMode(false);
+                return;
+            }
+        } else {
+            angleThresholdLogger.update(false);
+            startEngaged = null;
+        }
+        timeThresholdLogger.update(false);
+
+        double u = -pid.calculate(pitch);
 
         if (pid.atSetpoint()) {
             setpointLogger.update(true);
+            drivetrain.setLeftVoltages(0);
+            drivetrain.setRightVoltages(0);
             drivetrain.setCoastMode(false);
         } else {
             setpointLogger.update(false);
