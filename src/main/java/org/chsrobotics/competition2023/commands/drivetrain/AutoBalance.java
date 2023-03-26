@@ -18,6 +18,7 @@ package org.chsrobotics.competition2023.commands.drivetrain;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import org.chsrobotics.competition2023.Constants;
+import org.chsrobotics.competition2023.Robot;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.InertialMeasurement;
 import org.chsrobotics.lib.controllers.feedback.PID;
@@ -60,6 +61,7 @@ public class AutoBalance extends CommandBase {
                 drivetrain.setLeftVoltages(0);
                 drivetrain.setRightVoltages(0);
                 drivetrain.setCoastMode(false);
+                Robot.setAllianceLeds();
                 return;
             }
         } else {

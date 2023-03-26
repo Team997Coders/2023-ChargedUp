@@ -169,6 +169,22 @@ public class Arm implements Subsystem {
     }
 
     public void setVoltages(double localVoltage, double distalVoltage) {
+        double angLocal = getLocalAngleRadians();
+        double angDistal = getDistalAngleRadians();
+
+        // Arm stops
+        if (angLocal >= Constants.SUBSYSTEM.ARM.LOCAL_STOP_TOP) {
+            localVoltage = Math.min(localVoltage, 0);
+        } else if (angLocal <= Constants.SUBSYSTEM.ARM.LOCAL_STOP_BOTTOM) {
+            localVoltage = Math.max(localVoltage, 0);
+        }
+
+        if (angDistal >= Constants.SUBSYSTEM.ARM.DISTAL_STOP_TOP) {
+            distalVoltage = Math.min(distalVoltage, 0);
+        } else if (angDistal <= Constants.SUBSYSTEM.ARM.DISTAL_STOP_BOTTOM) {
+            distalVoltage = Math.max(distalVoltage, 0);
+        }
+
         distalNEO.setVoltage(distalVoltage);
 
         leftLocalNEO.setVoltage(localVoltage);

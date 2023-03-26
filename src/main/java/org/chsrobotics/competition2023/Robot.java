@@ -16,6 +16,7 @@ If not, see <https://www.gnu.org/licenses/>.
 */
 package org.chsrobotics.competition2023;
 
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Timer;
@@ -105,7 +106,7 @@ public class Robot extends SRobot {
                     new ArmSetpointControl(arm, () -> localSetpoint, () -> distalSetpoint),
                     new UpdateArmVis(arm, () -> localSetpoint, () -> distalSetpoint));
 
-    private void setAllianceLeds() {
+    public static void setAllianceLeds() {
         DriverStation.Alliance alliance = DriverStation.getAlliance();
         if (alliance == DriverStation.Alliance.Red) {
             LedMatrix.getInstance().setState(LedMatrix.State.RED);
@@ -125,6 +126,8 @@ public class Robot extends SRobot {
             HighLevelLogger.getInstance().startLogging();
             HighLevelLogger.getInstance().logMessage("*******ROBOT STARTUP*******");
             HighLevelLogger.getInstance().logMessage("997 Competition Robot 2023: Mantis");
+
+            CameraServer.startAutomaticCapture().setResolution(360,240);
 
             HighLevelLogger.getInstance().autoGenerateLogs("", "system");
 
