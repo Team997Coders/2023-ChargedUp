@@ -1,43 +1,43 @@
-///**
-//Copyright 2023 FRC Team 997
+/**
+Copyright 2023 FRC Team 997
+
+This program is free software: 
+you can redistribute it and/or modify it under the terms of the 
+GNU General Public License as published by the Free Software Foundation, 
+either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, 
+but WITHOUT ANY WARRANTY; without even the implied warranty of 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program. 
+If not, see <https://www.gnu.org/licenses/>.
+*/
+package org.chsrobotics.competition2023.subsystems;
 //
-//This program is free software:
-//you can redistribute it and/or modify it under the terms of the
-//GNU General Public License as published by the Free Software Foundation,
-//either version 3 of the License, or (at your option) any later version.
+// import edu.wpi.first.apriltag.AprilTagFieldLayout;
+// import edu.wpi.first.apriltag.AprilTagFields;
+// import edu.wpi.first.math.geometry.Pose3d;
+// import edu.wpi.first.math.util.Units;
+// import edu.wpi.first.wpilibj2.command.Subsystem;
+// import java.util.ArrayList;
+// import java.util.List;
+// import org.chsrobotics.competition2023.Constants;
+// import org.chsrobotics.competition2023.Constants.SUBSYSTEM.VISION;
+// import org.chsrobotics.competition2023.Localizer;
+// import org.chsrobotics.competition2023.Robot;
+// import org.chsrobotics.lib.telemetry.HighLevelLogger;
+// import org.chsrobotics.lib.telemetry.Logger;
+// import org.chsrobotics.lib.util.Tuple2;
+// import org.photonvision.EstimatedRobotPose;
+// import org.photonvision.PhotonCamera;
+// import org.photonvision.PhotonPoseEstimator;
+// import org.photonvision.SimVisionSystem;
+// import org.photonvision.targeting.PhotonTrackedTarget;
+// import org.photonvision.targeting.TargetCorner;
 //
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-//See the GNU General Public License for more details.
-//
-//You should have received a copy of the GNU General Public License along with this program.
-//If not, see <https://www.gnu.org/licenses/>.
-//*/
-//package org.chsrobotics.competition2023.subsystems;
-//
-//import edu.wpi.first.apriltag.AprilTagFieldLayout;
-//import edu.wpi.first.apriltag.AprilTagFields;
-//import edu.wpi.first.math.geometry.Pose3d;
-//import edu.wpi.first.math.util.Units;
-//import edu.wpi.first.wpilibj2.command.Subsystem;
-//import java.util.ArrayList;
-//import java.util.List;
-//import org.chsrobotics.competition2023.Constants;
-//import org.chsrobotics.competition2023.Constants.SUBSYSTEM.VISION;
-//import org.chsrobotics.competition2023.Localizer;
-//import org.chsrobotics.competition2023.Robot;
-//import org.chsrobotics.lib.telemetry.HighLevelLogger;
-//import org.chsrobotics.lib.telemetry.Logger;
-//import org.chsrobotics.lib.util.Tuple2;
-//import org.photonvision.EstimatedRobotPose;
-//import org.photonvision.PhotonCamera;
-//import org.photonvision.PhotonPoseEstimator;
-//import org.photonvision.SimVisionSystem;
-//import org.photonvision.targeting.PhotonTrackedTarget;
-//import org.photonvision.targeting.TargetCorner;
-//
-//public class Vision implements Subsystem {
+// public class Vision implements Subsystem {
 //    private static final Vision instance = new Vision();
 //
 //    private final PhotonCamera cameraA = new PhotonCamera(VISION.AT_CAMERA_FRONT_NAME);
@@ -265,4 +265,4 @@
 //                    .logWarning("There might be sim code still running somewhere!");
 //        }
 //    }
-//}
+// }

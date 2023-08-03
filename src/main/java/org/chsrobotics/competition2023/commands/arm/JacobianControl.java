@@ -118,7 +118,9 @@ public class JacobianControl extends CommandBase {
         if (angDistal < thresh && angDistal > -thresh) {
             //
             double scaler = 1.0 / (lenLocal + lenDistal);
-            double fudgeFactor = 1; // should be one, but should force the arm to bend more. Not sure why it isn't
+            double fudgeFactor =
+                    1; // should be one, but should force the arm to bend more. Not sure why it
+            // isn't
 
             // switch elbow bend depending on direction of x in end effector space.
             if (xEnd < 0) {

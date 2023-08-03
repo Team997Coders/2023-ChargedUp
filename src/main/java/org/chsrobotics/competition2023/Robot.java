@@ -18,16 +18,14 @@ package org.chsrobotics.competition2023;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import org.chsrobotics.competition2023.commands.ClawCommand;
-import org.chsrobotics.competition2023.commands.arm.ArmSetpointControl;
 import org.chsrobotics.competition2023.commands.arm.JacobianControl;
-import org.chsrobotics.competition2023.commands.arm.SimpleArmTest;
+import org.chsrobotics.competition2023.commands.arm.SnapToRightAngle;
 import org.chsrobotics.competition2023.commands.arm.UpdateArmVis;
 import org.chsrobotics.competition2023.commands.drivetrain.TeleopDrive;
 import org.chsrobotics.competition2023.subsystems.*;
@@ -59,7 +57,6 @@ public class Robot extends SRobot {
 
     private static final XboxController driverController = new XboxController(0);
     private static final XboxController operatorController = new XboxController(1);
-    private static final GenericHID buttonBox = new GenericHID(2);
 
     private final JoystickAxis driveLin = driverController.leftStickVerticalAxis();
     private final JoystickAxis driveRot = driverController.rightStickHorizontalAxis();
@@ -72,7 +69,6 @@ public class Robot extends SRobot {
     private final JoystickAxis operatorLeftHorizontal =
             operatorController.leftStickHorizontalAxis();
     private final JoystickAxis operatorLeftVertical = operatorController.leftStickVerticalAxis();
-    private final JoystickAxis operatorRightVertical = operatorController.rightStickVerticalAxis();
     private final JoystickAxis operatorLeftTrigger = operatorController.leftTriggerAxis();
     private final JoystickAxis operatorRightTrigger = operatorController.rightTriggerAxis();
     private final JoystickButton jacobianInvert = operatorController.leftBumperButton();
@@ -81,9 +77,6 @@ public class Robot extends SRobot {
     private final JoystickButton jacobianSlowMode = operatorController.rightBumperButton();
 
     private final JoystickButton clawButton = operatorController.XButton();
-
-    private double localSetpoint;
-    private double distalSetpoint;
     private double jacobianScaling;
 
     private final Command jacobianControlCommand =
@@ -96,15 +89,7 @@ public class Robot extends SRobot {
                             () -> jacobianScaling),
                     new UpdateArmVis(arm, () -> 0, () -> 0));
 
-    private final Command simpleControlCommand =
-            new ParallelCommandGroup(
-                    new SimpleArmTest(arm, operatorLeftVertical, operatorRightVertical, 3),
-                    new UpdateArmVis(arm, () -> 0, () -> 0));
-
-    private final Command setpointControlCommand =
-            new ParallelCommandGroup(
-                    new ArmSetpointControl(arm, () -> localSetpoint, () -> distalSetpoint),
-                    new UpdateArmVis(arm, () -> localSetpoint, () -> distalSetpoint));
+    private final SnapToRightAngle snapCommand = new SnapToRightAngle(arm);
 
     public static void setAllianceLeds() {
         DriverStation.Alliance alliance = DriverStation.getAlliance();
@@ -127,7 +112,9 @@ public class Robot extends SRobot {
             HighLevelLogger.getInstance().logMessage("*******ROBOT STARTUP*******");
             HighLevelLogger.getInstance().logMessage("997 Competition Robot 2023: Mantis");
 
-            CameraServer.startAutomaticCapture().setResolution(360,240);
+            if (isReal()) {
+                CameraServer.startAutomaticCapture().setResolution(360, 240);
+            }
 
             HighLevelLogger.getInstance().autoGenerateLogs("", "system");
 
@@ -149,6 +136,10 @@ public class Robot extends SRobot {
 
             uptimer.reset();
             uptimer.start();
+
+            arm.setDefaultCommand(jacobianControlCommand.withName("jacobianControl"));
+
+            CommandScheduler.getInstance().getDefaultButtonLoop().poll();
 
             // have to schedule a dummy command to get the arm telemetry to show up in NT for
             // whatever reason-- this doesn't happen with other subsystems
@@ -174,9 +165,6 @@ public class Robot extends SRobot {
             HighLevelLogger.getInstance().logMessage("Loop cycles: " + cycleCounter);
             HighLevelLogger.getInstance().logMessage("Uptime (s): " + uptimer.get());
         } else if (to == RobotState.TELEOPERATED) {
-            distalSetpoint = Arm.getInstance().getDistalAngleRadians();
-            localSetpoint = Arm.getInstance().getLocalAngleRadians();
-
             scheduler.schedule(new ClawCommand(claw, clawButton));
 
             scheduler.schedule(
@@ -191,13 +179,6 @@ public class Robot extends SRobot {
                             shift,
                             brakeButton,
                             slowAxis));
-
-            if (Config.ARM_MODES.ARM_MODE_CHOOSER.getSelected()
-                    == Config.ARM_MODES.ARM_MODE.JACOBIAN) {
-                scheduler.schedule(jacobianControlCommand);
-            } else {
-                scheduler.schedule(simpleControlCommand);
-            }
 
         } else if (to == RobotState.AUTONOMOUS) {
             scheduler.schedule(
@@ -217,25 +198,9 @@ public class Robot extends SRobot {
             jacobianScaling = Constants.COMMAND.ARM_JACOBIAN_CONTROL.INPUT_SCALING_FULL;
         }
 
-        if (buttonBox.getRawButton(5)) {
-            CommandScheduler.getInstance().schedule(setpointControlCommand);
-            localSetpoint = Math.PI / 2;
-            distalSetpoint = 0;
-        } else if (buttonBox.getRawButton(6)) {
-            CommandScheduler.getInstance().schedule(setpointControlCommand);
-            localSetpoint = 1.45;
-            distalSetpoint = -1.5;
-        } else if (buttonBox.getRawButton(7)) {
-            CommandScheduler.getInstance().schedule(setpointControlCommand);
-            localSetpoint = 0.9;
-            distalSetpoint = -0.15;
-        } else if (buttonBox.getRawButton(8)) {
-            CommandScheduler.getInstance().schedule(setpointControlCommand);
-            localSetpoint = Math.PI / 2;
-            distalSetpoint = -Math.PI / 2;
-        } else if (buttonBox.getRawButton(9)) {
-            scheduler.schedule(jacobianControlCommand);
-        }
+        if (operatorAButton.getAsBoolean()
+                && !CommandScheduler.getInstance().isScheduled(snapCommand))
+            CommandScheduler.getInstance().schedule(snapCommand);
 
         scheduler.run();
 

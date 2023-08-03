@@ -19,7 +19,6 @@ package org.chsrobotics.competition2023;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -30,7 +29,7 @@ import org.chsrobotics.competition2023.subsystems.Arm;
 import org.chsrobotics.competition2023.subsystems.Drivetrain;
 import org.chsrobotics.competition2023.subsystems.InertialMeasurement;
 import org.chsrobotics.competition2023.subsystems.PowerDistributionHub;
-//import org.chsrobotics.competition2023.subsystems.Vision;
+// import org.chsrobotics.competition2023.subsystems.Vision;
 import org.chsrobotics.lib.math.UtilityMath;
 import org.chsrobotics.lib.math.filters.DifferentiatingFilter;
 
@@ -89,7 +88,7 @@ public class Simulation {
 
         totalCurrentDraw += currentSim.getCurrentDrawAmps();
 
-//        Vision.getInstance().setSimState(new Pose3d(currentSim.getPose()));
+        //        Vision.getInstance().setSimState(new Pose3d(currentSim.getPose()));
 
         Drivetrain.getInstance()
                 .setSimState(

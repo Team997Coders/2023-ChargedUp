@@ -196,7 +196,9 @@ public class TeleopDrive extends CommandBase {
         // drivetrain.setRightVoltages(voltages.right);
         // drivetrain.setLeftVoltages(voltages.left);
 
-        drivetrain.setLeftVoltages(mode.execute().left * 12 * Constants.SUBSYSTEM.DRIVETRAIN.LEFT_MOTOR_MULTIPLIER);
-        drivetrain.setRightVoltages(mode.execute().right * 12 * Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_MOTOR_MULTIPLIER);
+        drivetrain.setLeftVoltages(
+                mode.execute().left * 12 * Constants.SUBSYSTEM.DRIVETRAIN.LEFT_MOTOR_MULTIPLIER);
+        drivetrain.setRightVoltages(
+                mode.execute().right * 12 * Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_MOTOR_MULTIPLIER);
     }
 }

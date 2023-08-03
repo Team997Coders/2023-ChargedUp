@@ -191,10 +191,10 @@ public final class Constants {
             // If too high, lower
             public static final double LOCAL_POTENTIOMETER_REPORTED_ANGLE_RADIANS_AT_ZERO = 3.897;
 
-//            public static final double LOCAL_STOP_BOTTOM = 0.60;
-//            public static final double LOCAL_STOP_TOP = 2.40;
-//            public static final double DISTAL_STOP_BOTTOM = -2.60;
-//            public static final double DISTAL_STOP_TOP = 2.67;
+            //            public static final double LOCAL_STOP_BOTTOM = 0.60;
+            //            public static final double LOCAL_STOP_TOP = 2.40;
+            //            public static final double DISTAL_STOP_BOTTOM = -2.60;
+            //            public static final double DISTAL_STOP_TOP = 2.67;
             public static final double LOCAL_STOP_BOTTOM = 0.80;
             public static final double LOCAL_STOP_TOP = 2.20;
             public static final double DISTAL_STOP_BOTTOM = -2.80;

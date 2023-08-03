@@ -56,7 +56,8 @@ public class AutoBalance extends CommandBase {
             if (startEngaged == null) {
                 startEngaged = System.currentTimeMillis();
             }
-            if (System.currentTimeMillis()-startEngaged > Constants.COMMAND.AUTO_BALANCE.BALANCED_TIME_THRESHOLD) {
+            if (System.currentTimeMillis() - startEngaged
+                    > Constants.COMMAND.AUTO_BALANCE.BALANCED_TIME_THRESHOLD) {
                 timeThresholdLogger.update(true);
                 drivetrain.setLeftVoltages(0);
                 drivetrain.setRightVoltages(0);
@@ -79,8 +80,8 @@ public class AutoBalance extends CommandBase {
             drivetrain.setCoastMode(false);
         } else {
             setpointLogger.update(false);
-            drivetrain.setLeftVoltages(u  * Constants.SUBSYSTEM.DRIVETRAIN.LEFT_MOTOR_MULTIPLIER);
-            drivetrain.setRightVoltages(u  * Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_MOTOR_MULTIPLIER);
+            drivetrain.setLeftVoltages(u * Constants.SUBSYSTEM.DRIVETRAIN.LEFT_MOTOR_MULTIPLIER);
+            drivetrain.setRightVoltages(u * Constants.SUBSYSTEM.DRIVETRAIN.RIGHT_MOTOR_MULTIPLIER);
         }
     }
 }
