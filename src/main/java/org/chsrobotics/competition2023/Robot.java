@@ -93,10 +93,10 @@ public class Robot extends SRobot {
 
     public static void setAllianceLeds() {
         DriverStation.Alliance alliance = DriverStation.getAlliance();
-        if (alliance == DriverStation.Alliance.Red) {
-            LedMatrix.getInstance().setState(LedMatrix.State.RED);
-        } else {
+        if (alliance == DriverStation.Alliance.Blue || !DriverStation.isFMSAttached()) {
             LedMatrix.getInstance().setState(LedMatrix.State.BLUE);
+        } else {
+            LedMatrix.getInstance().setState(LedMatrix.State.RED);
         }
     }
 
